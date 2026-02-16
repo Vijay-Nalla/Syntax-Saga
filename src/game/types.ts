@@ -75,7 +75,7 @@ export interface PlayerState {
 }
 
 export interface GameState {
-  screen: 'title' | 'language-select' | 'playing' | 'challenge' | 'game-over' | 'level-complete';
+  screen: 'title' | 'language-select' | 'playing' | 'challenge' | 'game-over' | 'level-complete' | 'paused';
   player: PlayerState;
   currentLevel: number;
   currentQuestion: Question | null;
