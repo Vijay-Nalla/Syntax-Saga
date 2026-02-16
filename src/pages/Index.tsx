@@ -7,10 +7,14 @@ import LanguageSelect from '@/components/LanguageSelect';
 import GameHUD from '@/components/GameHUD';
 import CodingChallenge from '@/components/CodingChallenge';
 import GameOverScreen from '@/components/GameOverScreen';
+import PauseMenu from '@/components/PauseMenu';
 
 const Index = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { gameState, startGame, answerQuestion, nextLevel, setGameState } = useGameEngine(canvasRef);
+  const {
+    gameState, startGame, answerQuestion, nextLevel,
+    pauseGame, resumeGame, returnToMenu, changeLanguage, setGameState,
+  } = useGameEngine(canvasRef);
 
   const handleStart = useCallback(() => {
     setGameState('language-select');
@@ -25,10 +29,11 @@ const Index = () => {
   }, [startGame, gameState.player.language]);
 
   const levelData = getLevelData(gameState.currentLevel);
+  const isInGame = gameState.screen === 'playing' || gameState.screen === 'challenge' || gameState.screen === 'paused';
 
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
-      {/* Game Canvas - always mounted */}
+      {/* Game Canvas */}
       <div className="flex items-center justify-center w-full h-full">
         <canvas
           ref={canvasRef}
@@ -38,20 +43,41 @@ const Index = () => {
           style={{
             maxWidth: '100%',
             maxHeight: '100%',
-            display: gameState.screen === 'playing' || gameState.screen === 'challenge' ? 'block' : 'none',
+            display: isInGame ? 'block' : 'none',
             imageRendering: 'pixelated',
           }}
         />
       </div>
 
-      {/* HUD */}
-      {(gameState.screen === 'playing' || gameState.screen === 'challenge') && (
-        <GameHUD player={gameState.player} levelNum={gameState.currentLevel} levelTopic={levelData.topic} />
+      {/* HUD + Back Button */}
+      {isInGame && (
+        <>
+          <GameHUD player={gameState.player} levelNum={gameState.currentLevel} levelTopic={levelData.topic} />
+          {/* Back / Pause button */}
+          <button
+            onClick={pauseGame}
+            className="absolute top-3 left-3 z-40 font-pixel text-[9px] px-3 py-2
+              border border-border text-muted-foreground bg-card/80 backdrop-blur-sm rounded
+              hover:border-primary hover:text-primary transition-all pointer-events-auto"
+          >
+            ☰ MENU
+          </button>
+        </>
       )}
 
       {/* Screens */}
       {gameState.screen === 'title' && <TitleScreen onStart={handleStart} />}
       {gameState.screen === 'language-select' && <LanguageSelect onSelect={handleSelectLanguage} />}
+
+      {/* Pause Menu */}
+      {gameState.screen === 'paused' && (
+        <PauseMenu
+          onResume={resumeGame}
+          onMainMenu={returnToMenu}
+          onChangeLanguage={changeLanguage}
+          currentLanguage={gameState.player.language}
+        />
+      )}
 
       {/* Challenge */}
       {gameState.screen === 'challenge' && gameState.currentQuestion && (
