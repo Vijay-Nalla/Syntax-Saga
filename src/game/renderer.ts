@@ -1,0 +1,239 @@
+import { PlayerState, Platform, ENEMY_CONFIG, EnemyType, PipeSpawn } from './types';
+
+const VIEWPORT_W = 960;
+const CANVAS_H = 600;
+const PLAYER_W = 32;
+const PLAYER_H = 48;
+
+interface Enemy {
+  x: number; y: number; type: EnemyType; startX: number; patrolRange: number; dir: number; alive: boolean;
+}
+interface Coin {
+  x: number; y: number; collected: boolean;
+}
+interface Terminal {
+  x: number; y: number; questionIndex: number; used: boolean;
+}
+
+export function renderFrame(
+  ctx: CanvasRenderingContext2D,
+  p: PlayerState,
+  cam: number,
+  platforms: Platform[],
+  coins: Coin[],
+  enemies: Enemy[],
+  terminals: Terminal[],
+  pipes: PipeSpawn[],
+  isUnderground: boolean,
+) {
+  // Background
+  ctx.fillStyle = isUnderground ? '#0a0800' : '#080c14';
+  ctx.fillRect(0, 0, VIEWPORT_W, CANVAS_H);
+
+  // Grid background
+  const gridColor = isUnderground ? 'rgba(180, 120, 0, 0.05)' : 'rgba(0, 255, 128, 0.05)';
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+  for (let x = -cam % 60; x < VIEWPORT_W; x += 60) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CANVAS_H); ctx.stroke();
+  }
+  for (let y = 0; y < CANVAS_H; y += 60) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(VIEWPORT_W, y); ctx.stroke();
+  }
+
+  // Platforms
+  const platColor = isUnderground ? '#1a1200' : '#0d2030';
+  const platGlow = isUnderground ? '#bb8800' : '#00ff80';
+  for (const plat of platforms) {
+    const px = plat.x - cam;
+    if (px + plat.width < -50 || px > VIEWPORT_W + 50) continue;
+    const isGround = plat.y >= 490;
+    ctx.fillStyle = isGround ? (isUnderground ? '#0d0800' : '#0a1520') : platColor;
+    ctx.fillRect(px, plat.y, plat.width, plat.height);
+    ctx.strokeStyle = platGlow;
+    ctx.lineWidth = isGround ? 2 : 1;
+    ctx.strokeRect(px, plat.y, plat.width, plat.height);
+    if (!isGround) {
+      ctx.shadowColor = platGlow;
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = platGlow;
+      ctx.fillRect(px, plat.y, plat.width, 2);
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  // Pipes
+  for (const pipe of pipes) {
+    const px = pipe.x - cam;
+    if (px < -60 || px > VIEWPORT_W + 60) continue;
+    ctx.save();
+    // Pipe body
+    ctx.fillStyle = '#006622';
+    ctx.fillRect(px - 20, pipe.y, 40, 50);
+    // Pipe rim
+    ctx.fillStyle = '#00aa44';
+    ctx.fillRect(px - 25, pipe.y, 50, 12);
+    ctx.strokeStyle = '#00ff66';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px - 25, pipe.y, 50, 12);
+    // Glow
+    ctx.shadowColor = '#00ff66';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#00ff66';
+    ctx.fillRect(px - 5, pipe.y + 15, 10, 20);
+    ctx.shadowBlur = 0;
+    // Prompt
+    if (!pipe.isReturn && Math.abs(p.x + p.width / 2 - pipe.x) < 40 && Math.abs(p.y + p.height - pipe.y) < 30) {
+      ctx.fillStyle = '#00ff66';
+      ctx.font = '8px "Press Start 2P"';
+      ctx.textAlign = 'center';
+      ctx.fillText('[↓] ENTER', px, pipe.y - 10);
+    }
+    if (pipe.isReturn && Math.abs(p.x + p.width / 2 - pipe.x) < 40 && Math.abs(p.y + p.height - pipe.y) < 30) {
+      ctx.fillStyle = '#00ff66';
+      ctx.font = '8px "Press Start 2P"';
+      ctx.textAlign = 'center';
+      ctx.fillText('[↑] EXIT', px, pipe.y - 10);
+    }
+    ctx.restore();
+  }
+
+  // Coins
+  for (const coin of coins) {
+    if (coin.collected) continue;
+    const cx = coin.x - cam;
+    if (cx < -20 || cx > VIEWPORT_W + 20) continue;
+    const t = Date.now() / 300;
+    ctx.save();
+    ctx.shadowColor = '#ffdd00';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#ffdd00';
+    ctx.beginPath();
+    ctx.arc(cx, coin.y + Math.sin(t + coin.x) * 3, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#aa8800';
+    ctx.font = '10px "Press Start 2P"';
+    ctx.textAlign = 'center';
+    ctx.fillText('$', cx, coin.y + 4 + Math.sin(t + coin.x) * 3);
+    ctx.restore();
+  }
+
+  // Enemies with type-specific visuals
+  for (const enemy of enemies) {
+    if (!enemy.alive) continue;
+    const ex = enemy.x - cam;
+    if (ex < -30 || ex > VIEWPORT_W + 30) continue;
+    const config = ENEMY_CONFIG[enemy.type];
+    ctx.save();
+    ctx.shadowColor = config.color;
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = config.color;
+
+    if (enemy.type === 'debug-ghost') {
+      // Ghost shape - semi-transparent
+      ctx.globalAlpha = 0.6 + Math.sin(Date.now() / 200) * 0.3;
+      ctx.beginPath();
+      ctx.arc(ex, enemy.y - 6, 14, Math.PI, 0);
+      ctx.lineTo(ex + 14, enemy.y + 10);
+      ctx.lineTo(ex + 7, enemy.y + 4);
+      ctx.lineTo(ex, enemy.y + 10);
+      ctx.lineTo(ex - 7, enemy.y + 4);
+      ctx.lineTo(ex - 14, enemy.y + 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (enemy.type === 'virus-bug') {
+      // Spiky virus
+      const spikes = 8;
+      ctx.beginPath();
+      for (let i = 0; i < spikes * 2; i++) {
+        const angle = (i / (spikes * 2)) * Math.PI * 2;
+        const r = i % 2 === 0 ? 16 : 10;
+        ctx.lineTo(ex + Math.cos(angle) * r, enemy.y + Math.sin(angle) * r);
+      }
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      // Default square enemies
+      ctx.fillRect(ex - 12, enemy.y - 12, 24, 24);
+    }
+
+    // Eyes
+    ctx.fillStyle = '#000';
+    ctx.fillRect(ex - 6, enemy.y - 6, 5, 5);
+    ctx.fillRect(ex + 2, enemy.y - 6, 5, 5);
+
+    // Label
+    ctx.fillStyle = config.color;
+    ctx.font = '6px "Press Start 2P"';
+    ctx.textAlign = 'center';
+    ctx.fillText(config.label, ex, enemy.y - 18);
+    ctx.restore();
+  }
+
+  // Terminals
+  for (const terminal of terminals) {
+    const tx = terminal.x - cam;
+    if (tx < -30 || tx > VIEWPORT_W + 30) continue;
+    ctx.save();
+    ctx.shadowColor = terminal.used ? '#333' : '#00ffcc';
+    ctx.shadowBlur = terminal.used ? 0 : 15;
+    ctx.fillStyle = terminal.used ? '#1a1a2e' : '#0a2a2a';
+    ctx.fillRect(tx - 15, terminal.y, 30, 40);
+    ctx.strokeStyle = terminal.used ? '#333' : '#00ffcc';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(tx - 15, terminal.y, 30, 40);
+    ctx.fillStyle = terminal.used ? '#111' : '#00ffcc';
+    ctx.fillRect(tx - 10, terminal.y + 5, 20, 15);
+    if (!terminal.used) {
+      ctx.fillStyle = '#000';
+      ctx.font = '6px "Press Start 2P"';
+      ctx.textAlign = 'center';
+      ctx.fillText('>', tx, terminal.y + 15);
+    }
+    if (!terminal.used && Math.abs(p.x + p.width / 2 - terminal.x) < 40 && Math.abs(p.y + p.height - terminal.y - 40) < 40) {
+      ctx.fillStyle = '#00ffcc';
+      ctx.font = '8px "Press Start 2P"';
+      ctx.textAlign = 'center';
+      ctx.fillText('[E] HACK', tx, terminal.y - 10);
+    }
+    ctx.restore();
+  }
+
+  // Player
+  const ppx = p.x - cam;
+  ctx.save();
+  ctx.shadowColor = '#00ff80';
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = '#00ff80';
+  ctx.fillRect(ppx + 4, p.y + 8, PLAYER_W - 8, PLAYER_H - 16);
+  ctx.fillStyle = '#00cc66';
+  ctx.fillRect(ppx + 6, p.y, PLAYER_W - 12, 14);
+  ctx.fillStyle = '#00ffcc';
+  const visorX = p.facing === 'right' ? ppx + 14 : ppx + 6;
+  ctx.fillRect(visorX, p.y + 4, 12, 5);
+  const legAnim = Math.abs(p.vx) > 0 ? Math.sin(Date.now() / 80) * 4 : 0;
+  ctx.fillStyle = '#008844';
+  ctx.fillRect(ppx + 6, p.y + PLAYER_H - 10 + legAnim, 8, 10);
+  ctx.fillRect(ppx + PLAYER_W - 14, p.y + PLAYER_H - 10 - legAnim, 8, 10);
+  ctx.restore();
+
+  // End gate
+  const CANVAS_W = 2400;
+  const gateX = CANVAS_W - 60 - cam;
+  if (gateX > -50 && gateX < VIEWPORT_W + 50) {
+    ctx.save();
+    ctx.shadowColor = '#00ffcc';
+    ctx.shadowBlur = 20;
+    ctx.strokeStyle = '#00ffcc';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(gateX, CANVAS_H - 160, 40, 60);
+    ctx.fillStyle = 'rgba(0,255,204,0.1)';
+    ctx.fillRect(gateX, CANVAS_H - 160, 40, 60);
+    ctx.fillStyle = '#00ffcc';
+    ctx.font = '7px "Press Start 2P"';
+    ctx.textAlign = 'center';
+    ctx.fillText('EXIT', gateX + 20, CANVAS_H - 170);
+    ctx.restore();
+  }
+}

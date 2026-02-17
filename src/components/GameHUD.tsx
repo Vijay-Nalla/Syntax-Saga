@@ -4,9 +4,10 @@ interface GameHUDProps {
   player: PlayerState;
   levelNum: number;
   levelTopic: string;
+  isUnderground?: boolean;
 }
 
-export default function GameHUD({ player, levelNum, levelTopic }: GameHUDProps) {
+export default function GameHUD({ player, levelNum, levelTopic, isUnderground }: GameHUDProps) {
   const healthPercent = player.health;
   const healthColor = healthPercent > 60 ? 'hsl(var(--neon-green))' : healthPercent > 30 ? 'hsl(var(--neon-yellow))' : 'hsl(var(--destructive))';
 
@@ -15,8 +16,11 @@ export default function GameHUD({ player, levelNum, levelTopic }: GameHUDProps) 
   return (
     <div className="absolute top-0 left-0 right-0 z-30 pointer-events-none">
       <div className="flex items-start justify-between p-3 gap-4">
-        {/* Health */}
-        <div className="flex flex-col gap-1 min-w-[180px]">
+        {/* Health + Player name */}
+        <div className="flex flex-col gap-1 min-w-[180px] ml-20">
+          <span className="font-pixel text-[7px] text-foreground truncate max-w-[120px]">
+            {player.name}
+          </span>
           <div className="flex items-center gap-2">
             <span className="font-pixel text-[8px] text-destructive">HP</span>
             <div className="flex-1 h-3 bg-muted rounded-sm border border-border overflow-hidden">
@@ -32,7 +36,7 @@ export default function GameHUD({ player, levelNum, levelTopic }: GameHUDProps) 
         {/* Level info */}
         <div className="text-center">
           <div className="font-pixel text-[8px] text-secondary text-glow-cyan">
-            LEVEL {levelNum}
+            LEVEL {levelNum} {isUnderground && <span className="text-neon-orange">⬇ UNDERGROUND</span>}
           </div>
           <div className="font-mono text-[10px] text-muted-foreground">
             {levelTopic}

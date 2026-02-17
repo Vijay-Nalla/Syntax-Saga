@@ -1,22 +1,41 @@
 import { useState } from 'react';
-import { Question } from '@/game/types';
+import { Question, HINT_COST } from '@/game/types';
 
 interface CodingChallengeProps {
   question: Question;
   onAnswer: (correct: boolean) => void;
+  playerCoins: number;
+  onUseHint: () => void;
 }
 
-export default function CodingChallenge({ question, onAnswer }: CodingChallengeProps) {
+export default function CodingChallenge({ question, onAnswer, playerCoins, onUseHint }: CodingChallengeProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [answered, setAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [hintUsed, setHintUsed] = useState(false);
 
   const handleSubmit = (answer: string) => {
     const correct = answer.trim().toLowerCase() === question.answer.trim().toLowerCase();
     setIsCorrect(correct);
     setAnswered(true);
     setTimeout(() => onAnswer(correct), 1500);
+  };
+
+  const handleBuyHint = () => {
+    if (playerCoins >= HINT_COST && !hintUsed) {
+      setHintUsed(true);
+      onUseHint();
+    }
+  };
+
+  // Generate a partial hint from the answer
+  const getHintText = (): string => {
+    if (question.hint) return question.hint;
+    const ans = question.answer;
+    if (ans.length <= 2) return `The answer has ${ans.length} character(s).`;
+    const revealed = ans.slice(0, Math.ceil(ans.length / 3));
+    return `The answer starts with "${revealed}..." (${ans.length} chars total)`;
   };
 
   const typeLabel = question.type === 'mcq' ? 'MULTIPLE CHOICE' :
@@ -27,10 +46,8 @@ export default function CodingChallenge({ question, onAnswer }: CodingChallengeP
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
-      <div
-        className="relative z-10 w-full max-w-2xl mx-4 border-2 border-primary rounded-lg bg-card p-6 box-glow-green"
-        style={{ animation: 'fadeInUp 0.3s ease-out' }}
-      >
+      <div className="relative z-10 w-full max-w-2xl mx-4 border-2 border-primary rounded-lg bg-card p-6 box-glow-green"
+        style={{ animation: 'fadeInUp 0.3s ease-out' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <span className="font-pixel text-[9px] text-primary text-glow-green">{typeLabel}</span>
@@ -45,6 +62,32 @@ export default function CodingChallenge({ question, onAnswer }: CodingChallengeP
           <pre className="bg-muted p-4 rounded border border-border font-mono text-xs text-secondary mb-6 overflow-x-auto">
             {question.code}
           </pre>
+        )}
+
+        {/* Hint button */}
+        {!answered && (
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={handleBuyHint}
+              disabled={hintUsed || playerCoins < HINT_COST}
+              className={`font-pixel text-[8px] px-4 py-2 border-2 rounded transition-all
+                ${hintUsed ? 'border-muted text-muted-foreground opacity-50' :
+                  playerCoins < HINT_COST ? 'border-border text-muted-foreground opacity-30 cursor-not-allowed' :
+                  'border-neon-yellow text-neon-yellow hover:bg-neon-yellow/10'}`}
+            >
+              💡 HINT ({HINT_COST} coins)
+            </button>
+            <span className="font-pixel text-[7px] text-muted-foreground">
+              $ {playerCoins} coins
+            </span>
+          </div>
+        )}
+
+        {/* Hint display */}
+        {hintUsed && !answered && (
+          <div className="border border-neon-yellow/30 rounded p-3 mb-4 bg-neon-yellow/5">
+            <p className="font-mono text-xs text-neon-yellow">{getHintText()}</p>
+          </div>
         )}
 
         {/* Answers */}

@@ -16,6 +16,7 @@ export interface Question {
   options?: string[];
   answer: string;
   explanation: string;
+  hint?: string;
 }
 
 export interface LevelData {
@@ -30,6 +31,7 @@ export interface LevelData {
   enemies: EnemySpawn[];
   coins: CoinSpawn[];
   terminals: TerminalSpawn[];
+  pipes: PipeSpawn[];
 }
 
 export interface Platform {
@@ -40,10 +42,20 @@ export interface Platform {
   type: 'normal' | 'moving' | 'breakable';
 }
 
+export type EnemyType = 'syntax-error' | 'logical-error' | 'runtime-error' | 'debug-ghost' | 'virus-bug';
+
+export const ENEMY_CONFIG: Record<EnemyType, { damage: number; color: string; label: string }> = {
+  'syntax-error':   { damage: 5,  color: '#ff9933', label: 'SYNTAX' },
+  'logical-error':  { damage: 10, color: '#ff3366', label: 'LOGIC' },
+  'runtime-error':  { damage: 20, color: '#ff0000', label: 'RUNTIME' },
+  'debug-ghost':    { damage: 15, color: '#cc00ff', label: 'GHOST' },
+  'virus-bug':      { damage: 25, color: '#00ff00', label: 'VIRUS' },
+};
+
 export interface EnemySpawn {
   x: number;
   y: number;
-  type: 'bug' | 'glitch' | 'virus';
+  type: EnemyType;
   patrolRange: number;
 }
 
@@ -56,6 +68,14 @@ export interface TerminalSpawn {
   x: number;
   y: number;
   questionIndex: number;
+}
+
+export interface PipeSpawn {
+  x: number;
+  y: number;
+  targetX: number;
+  targetY: number;
+  isReturn: boolean;
 }
 
 export interface PlayerState {
@@ -72,14 +92,27 @@ export interface PlayerState {
   level: number;
   language: Language;
   coins: number;
+  name: string;
 }
 
 export interface GameState {
-  screen: 'title' | 'language-select' | 'playing' | 'challenge' | 'game-over' | 'level-complete' | 'paused';
+  screen: 'title' | 'name-entry' | 'language-select' | 'leaderboard' | 'playing' | 'challenge' | 'game-over' | 'level-complete' | 'paused';
   player: PlayerState;
   currentLevel: number;
   currentQuestion: Question | null;
   isPaused: boolean;
+  startTime: number;
+  isUnderground: boolean;
+}
+
+export interface LeaderboardEntry {
+  name: string;
+  coins: number;
+  levelsCompleted: number;
+  timeTaken: number; // seconds
+  score: number;
+  language: Language;
+  date: string;
 }
 
 export const LANGUAGES: LanguageInfo[] = [
@@ -89,3 +122,5 @@ export const LANGUAGES: LanguageInfo[] = [
   { id: 'cpp', name: 'C++', color: 'hsl(270, 100%, 65%)', glowClass: 'neon-purple', icon: 'C+', description: 'Power and performance' },
   { id: 'java', name: 'Java', color: 'hsl(25, 100%, 55%)', glowClass: 'neon-orange', icon: 'JV', description: 'Write once, run anywhere' },
 ];
+
+export const HINT_COST = 10;

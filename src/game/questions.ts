@@ -9,6 +9,7 @@ const jsQuestions: Question[][] = [
       options: ['console.log()', 'print()', 'echo()', 'System.out.println()'],
       answer: 'console.log()',
       explanation: 'console.log() is the standard way to output messages to the browser console.',
+      hint: 'It involves the "console" object...',
     },
     {
       type: 'fill-blank',
@@ -16,6 +17,7 @@ const jsQuestions: Question[][] = [
       code: '___("Hello World");',
       answer: 'console.log',
       explanation: 'console.log() outputs text to the console.',
+      hint: 'Two words, starts with "console"',
     },
     {
       type: 'output',
@@ -24,6 +26,7 @@ const jsQuestions: Question[][] = [
       options: ['23', '5', 'undefined', 'NaN'],
       answer: '5',
       explanation: '2 + 3 performs arithmetic addition, resulting in 5.',
+      hint: 'Think about arithmetic, not string concatenation',
     },
   ],
   // Level 2 - Variables
