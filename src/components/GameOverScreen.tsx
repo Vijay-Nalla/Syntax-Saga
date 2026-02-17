@@ -1,14 +1,33 @@
 import { PlayerState } from '@/game/types';
+import { addLeaderboardEntry } from '@/game/leaderboard';
+import { useEffect, useRef } from 'react';
 
 interface GameOverScreenProps {
   player: PlayerState;
   onRestart: () => void;
   type: 'game-over' | 'level-complete';
   onNextLevel?: () => void;
+  onViewLeaderboard?: () => void;
+  playTime: number;
 }
 
-export default function GameOverScreen({ player, onRestart, type, onNextLevel }: GameOverScreenProps) {
+export default function GameOverScreen({ player, onRestart, type, onNextLevel, onViewLeaderboard, playTime }: GameOverScreenProps) {
   const isWin = type === 'level-complete';
+  const savedRef = useRef(false);
+
+  // Save to leaderboard on game-over
+  useEffect(() => {
+    if (type === 'game-over' && !savedRef.current) {
+      savedRef.current = true;
+      addLeaderboardEntry({
+        name: player.name,
+        coins: player.coins,
+        levelsCompleted: player.level - 1,
+        timeTaken: playTime,
+        language: player.language,
+      });
+    }
+  }, [type, player, playTime]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur">
@@ -40,23 +59,34 @@ export default function GameOverScreen({ player, onRestart, type, onNextLevel }:
           </div>
         </div>
 
-        <div className="flex gap-4 justify-center">
-          {isWin && onNextLevel && (
+        <div className="flex flex-col gap-3 items-center">
+          <div className="flex gap-4 justify-center">
+            {isWin && onNextLevel && (
+              <button
+                onClick={onNextLevel}
+                className="font-pixel text-[10px] px-8 py-3 border-2 border-primary text-primary
+                  hover:bg-primary hover:text-primary-foreground transition-all box-glow-green"
+              >
+                NEXT LEVEL
+              </button>
+            )}
             <button
-              onClick={onNextLevel}
-              className="font-pixel text-[10px] px-8 py-3 border-2 border-primary text-primary
-                hover:bg-primary hover:text-primary-foreground transition-all box-glow-green"
+              onClick={onRestart}
+              className="font-pixel text-[10px] px-8 py-3 border-2 border-secondary text-secondary
+                hover:bg-secondary hover:text-secondary-foreground transition-all"
             >
-              NEXT LEVEL
+              {isWin ? 'RESTART' : 'TRY AGAIN'}
+            </button>
+          </div>
+          {type === 'game-over' && onViewLeaderboard && (
+            <button
+              onClick={onViewLeaderboard}
+              className="font-pixel text-[8px] px-6 py-2 border border-border text-muted-foreground
+                hover:border-secondary hover:text-secondary transition-all mt-2"
+            >
+              VIEW LEADERBOARD
             </button>
           )}
-          <button
-            onClick={onRestart}
-            className="font-pixel text-[10px] px-8 py-3 border-2 border-secondary text-secondary
-              hover:bg-secondary hover:text-secondary-foreground transition-all"
-          >
-            {isWin ? 'RESTART' : 'TRY AGAIN'}
-          </button>
         </div>
       </div>
     </div>

@@ -1,32 +1,53 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { useGameEngine } from '@/game/useGameEngine';
 import { Language } from '@/game/types';
 import { getLevelData } from '@/game/levels';
+import { getPlayerName, setPlayerName } from '@/game/leaderboard';
 import TitleScreen from '@/components/TitleScreen';
 import LanguageSelect from '@/components/LanguageSelect';
 import GameHUD from '@/components/GameHUD';
 import CodingChallenge from '@/components/CodingChallenge';
 import GameOverScreen from '@/components/GameOverScreen';
 import PauseMenu from '@/components/PauseMenu';
+import PlayerNameEntry from '@/components/PlayerNameEntry';
+import LeaderboardScreen from '@/components/LeaderboardScreen';
 
 const Index = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const {
-    gameState, startGame, answerQuestion, nextLevel,
-    pauseGame, resumeGame, returnToMenu, changeLanguage, setGameState,
+    gameState, startGame, answerQuestion, useHint, nextLevel,
+    pauseGame, resumeGame, returnToMenu, changeLanguage, setGameState, getPlayTime,
   } = useGameEngine(canvasRef);
 
+  const [playerNameLocal, setPlayerNameLocal] = useState(getPlayerName() || '');
+
   const handleStart = useCallback(() => {
+    const saved = getPlayerName();
+    if (saved) {
+      setPlayerNameLocal(saved);
+      setGameState('language-select');
+    } else {
+      setGameState('name-entry');
+    }
+  }, [setGameState]);
+
+  const handleNameSubmit = useCallback((name: string) => {
+    setPlayerName(name);
+    setPlayerNameLocal(name);
     setGameState('language-select');
   }, [setGameState]);
 
   const handleSelectLanguage = useCallback((lang: Language) => {
-    startGame(lang);
-  }, [startGame]);
+    startGame(lang, playerNameLocal);
+  }, [startGame, playerNameLocal]);
 
   const handleRestart = useCallback(() => {
-    startGame(gameState.player.language);
-  }, [startGame, gameState.player.language]);
+    startGame(gameState.player.language, playerNameLocal);
+  }, [startGame, gameState.player.language, playerNameLocal]);
+
+  const handleViewLeaderboard = useCallback(() => {
+    setGameState('leaderboard');
+  }, [setGameState]);
 
   const levelData = getLevelData(gameState.currentLevel);
   const isInGame = gameState.screen === 'playing' || gameState.screen === 'challenge' || gameState.screen === 'paused';
@@ -52,8 +73,7 @@ const Index = () => {
       {/* HUD + Back Button */}
       {isInGame && (
         <>
-          <GameHUD player={gameState.player} levelNum={gameState.currentLevel} levelTopic={levelData.topic} />
-          {/* Back / Pause button */}
+          <GameHUD player={gameState.player} levelNum={gameState.currentLevel} levelTopic={levelData.topic} isUnderground={gameState.isUnderground} />
           <button
             onClick={pauseGame}
             className="absolute top-3 left-3 z-40 font-pixel text-[9px] px-3 py-2
@@ -66,8 +86,10 @@ const Index = () => {
       )}
 
       {/* Screens */}
-      {gameState.screen === 'title' && <TitleScreen onStart={handleStart} />}
+      {gameState.screen === 'title' && <TitleScreen onStart={handleStart} onLeaderboard={handleViewLeaderboard} />}
+      {gameState.screen === 'name-entry' && <PlayerNameEntry onSubmit={handleNameSubmit} onBack={() => setGameState('title')} />}
       {gameState.screen === 'language-select' && <LanguageSelect onSelect={handleSelectLanguage} />}
+      {gameState.screen === 'leaderboard' && <LeaderboardScreen onBack={() => setGameState('title')} />}
 
       {/* Pause Menu */}
       {gameState.screen === 'paused' && (
@@ -81,7 +103,12 @@ const Index = () => {
 
       {/* Challenge */}
       {gameState.screen === 'challenge' && gameState.currentQuestion && (
-        <CodingChallenge question={gameState.currentQuestion} onAnswer={answerQuestion} />
+        <CodingChallenge
+          question={gameState.currentQuestion}
+          onAnswer={answerQuestion}
+          playerCoins={gameState.player.coins}
+          onUseHint={useHint}
+        />
       )}
 
       {/* Game Over / Level Complete */}
@@ -91,6 +118,8 @@ const Index = () => {
           type={gameState.screen}
           onRestart={handleRestart}
           onNextLevel={gameState.screen === 'level-complete' ? nextLevel : undefined}
+          onViewLeaderboard={handleViewLeaderboard}
+          playTime={getPlayTime()}
         />
       )}
     </div>
