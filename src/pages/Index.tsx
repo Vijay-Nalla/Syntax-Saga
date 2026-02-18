@@ -15,7 +15,7 @@ import LeaderboardScreen from '@/components/LeaderboardScreen';
 const Index = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const {
-    gameState, startGame, answerQuestion, useHint, nextLevel,
+    gameState, startGame, answerQuestion, useHint, nextLevel, replayLevel,
     pauseGame, resumeGame, returnToMenu, changeLanguage, setGameState, getPlayTime,
   } = useGameEngine(canvasRef);
 
@@ -49,6 +49,10 @@ const Index = () => {
     setGameState('leaderboard');
   }, [setGameState]);
 
+  const handleGoHome = useCallback(() => {
+    returnToMenu();
+  }, [returnToMenu]);
+
   const levelData = getLevelData(gameState.currentLevel);
   const isInGame = gameState.screen === 'playing' || gameState.screen === 'challenge' || gameState.screen === 'paused';
 
@@ -70,13 +74,13 @@ const Index = () => {
         />
       </div>
 
-      {/* HUD + Back Button */}
+      {/* HUD + Menu Button (top-right) */}
       {isInGame && (
         <>
           <GameHUD player={gameState.player} levelNum={gameState.currentLevel} levelTopic={levelData.topic} isUnderground={gameState.isUnderground} />
           <button
             onClick={pauseGame}
-            className="absolute top-3 left-3 z-40 font-pixel text-[9px] px-3 py-2
+            className="absolute top-3 right-3 z-40 font-pixel text-[9px] px-3 py-2
               border border-border text-muted-foreground bg-card/80 backdrop-blur-sm rounded
               hover:border-primary hover:text-primary transition-all pointer-events-auto"
           >
@@ -97,6 +101,7 @@ const Index = () => {
           onResume={resumeGame}
           onMainMenu={returnToMenu}
           onChangeLanguage={changeLanguage}
+          onViewLeaderboard={handleViewLeaderboard}
           currentLanguage={gameState.player.language}
         />
       )}
@@ -118,6 +123,8 @@ const Index = () => {
           type={gameState.screen}
           onRestart={handleRestart}
           onNextLevel={gameState.screen === 'level-complete' ? nextLevel : undefined}
+          onReplayLevel={gameState.screen === 'level-complete' ? replayLevel : undefined}
+          onGoHome={handleGoHome}
           onViewLeaderboard={handleViewLeaderboard}
           playTime={getPlayTime()}
         />
