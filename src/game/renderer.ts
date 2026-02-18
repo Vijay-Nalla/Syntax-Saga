@@ -41,24 +41,41 @@ export function renderFrame(
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(VIEWPORT_W, y); ctx.stroke();
   }
 
-  // Platforms
+  // Platforms with depth shadow and edge glow
   const platColor = isUnderground ? '#1a1200' : '#0d2030';
   const platGlow = isUnderground ? '#bb8800' : '#00ff80';
   for (const plat of platforms) {
     const px = plat.x - cam;
     if (px + plat.width < -50 || px > VIEWPORT_W + 50) continue;
     const isGround = plat.y >= 490;
+
+    // Shadow under platform for depth
+    if (!isGround) {
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillRect(px + 4, plat.y + plat.height, plat.width, 6);
+    }
+
+    // Platform body
     ctx.fillStyle = isGround ? (isUnderground ? '#0d0800' : '#0a1520') : platColor;
     ctx.fillRect(px, plat.y, plat.width, plat.height);
+
+    // Border
     ctx.strokeStyle = platGlow;
     ctx.lineWidth = isGround ? 2 : 1;
     ctx.strokeRect(px, plat.y, plat.width, plat.height);
+
+    // Top edge glow for climbable platforms
     if (!isGround) {
+      ctx.save();
       ctx.shadowColor = platGlow;
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 10;
       ctx.fillStyle = platGlow;
       ctx.fillRect(px, plat.y, plat.width, 2);
+      // Corner markers
+      ctx.fillRect(px, plat.y, 4, plat.height);
+      ctx.fillRect(px + plat.width - 4, plat.y, 4, plat.height);
       ctx.shadowBlur = 0;
+      ctx.restore();
     }
   }
 
