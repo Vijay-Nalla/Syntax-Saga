@@ -1,16 +1,30 @@
 import { Language, LANGUAGES } from '@/game/types';
+import { audioManager } from '@/game/audioManager';
 import { useState } from 'react';
 
 interface PauseMenuProps {
   onResume: () => void;
   onMainMenu: () => void;
   onChangeLanguage: (lang: Language) => void;
+  onViewLeaderboard: () => void;
   currentLanguage: Language;
 }
 
-export default function PauseMenu({ onResume, onMainMenu, onChangeLanguage, currentLanguage }: PauseMenuProps) {
+export default function PauseMenu({ onResume, onMainMenu, onChangeLanguage, onViewLeaderboard, currentLanguage }: PauseMenuProps) {
   const [showLanguages, setShowLanguages] = useState(false);
   const [showConfirmMenu, setShowConfirmMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [audioSettings, setAudioSettings] = useState(audioManager.getSettings());
+
+  const handleMute = () => {
+    audioManager.toggleMute();
+    setAudioSettings(audioManager.getSettings());
+  };
+
+  const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
+    audioManager.setVolume(parseFloat(e.target.value));
+    setAudioSettings(audioManager.getSettings());
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
@@ -34,21 +48,46 @@ export default function PauseMenu({ onResume, onMainMenu, onChangeLanguage, curr
               Return to main menu? Your current level progress will be lost.
             </p>
             <div className="flex gap-3 justify-center">
-              <button
-                onClick={onMainMenu}
-                className="font-pixel text-[9px] px-6 py-2 border-2 border-destructive text-destructive
-                  hover:bg-destructive hover:text-destructive-foreground transition-all"
-              >
+              <button onClick={onMainMenu}
+                className="font-pixel text-[9px] px-6 py-2 border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all">
                 CONFIRM
               </button>
-              <button
-                onClick={() => setShowConfirmMenu(false)}
-                className="font-pixel text-[9px] px-6 py-2 border-2 border-border text-muted-foreground
-                  hover:border-foreground hover:text-foreground transition-all"
-              >
+              <button onClick={() => setShowConfirmMenu(false)}
+                className="font-pixel text-[9px] px-6 py-2 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all">
                 CANCEL
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Settings panel */}
+        {showSettings && (
+          <div className="mb-6 border-2 border-secondary rounded-lg p-4 bg-secondary/5">
+            <p className="font-pixel text-[9px] text-secondary mb-4 text-center">⚙ SETTINGS</p>
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-mono text-xs text-foreground">Sound</span>
+              <button onClick={handleMute}
+                className={`font-pixel text-[8px] px-4 py-1 border-2 rounded transition-all
+                  ${audioSettings.muted ? 'border-destructive text-destructive' : 'border-primary text-primary'}`}>
+                {audioSettings.muted ? '🔇 MUTED' : '🔊 ON'}
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-muted-foreground">Vol</span>
+              <input
+                type="range" min="0" max="1" step="0.05"
+                value={audioSettings.volume}
+                onChange={handleVolume}
+                className="flex-1 accent-primary h-1"
+              />
+              <span className="font-pixel text-[8px] text-foreground w-8 text-right">
+                {Math.round(audioSettings.volume * 100)}
+              </span>
+            </div>
+            <button onClick={() => setShowSettings(false)}
+              className="mt-3 w-full font-pixel text-[8px] text-muted-foreground hover:text-foreground transition-all">
+              BACK
+            </button>
           </div>
         )}
 
@@ -77,37 +116,39 @@ export default function PauseMenu({ onResume, onMainMenu, onChangeLanguage, curr
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setShowLanguages(false)}
-              className="mt-3 w-full font-pixel text-[8px] text-muted-foreground hover:text-foreground transition-all"
-            >
+            <button onClick={() => setShowLanguages(false)}
+              className="mt-3 w-full font-pixel text-[8px] text-muted-foreground hover:text-foreground transition-all">
               BACK
             </button>
           </div>
         )}
 
         {/* Menu buttons */}
-        {!showConfirmMenu && !showLanguages && (
+        {!showConfirmMenu && !showLanguages && !showSettings && (
           <div className="flex flex-col gap-3">
-            <button
-              onClick={onResume}
+            <button onClick={onResume}
               className="font-pixel text-[10px] w-full px-8 py-4 border-2 border-primary text-primary
-                hover:bg-primary hover:text-primary-foreground transition-all box-glow-green"
-            >
+                hover:bg-primary hover:text-primary-foreground transition-all box-glow-green">
               ▶ RESUME GAME
             </button>
-            <button
-              onClick={() => setShowLanguages(true)}
+            <button onClick={() => setShowLanguages(true)}
               className="font-pixel text-[10px] w-full px-8 py-3 border-2 border-secondary text-secondary
-                hover:bg-secondary hover:text-secondary-foreground transition-all"
-            >
+                hover:bg-secondary hover:text-secondary-foreground transition-all">
               ⟐ CHANGE LANGUAGE
             </button>
-            <button
-              onClick={() => setShowConfirmMenu(true)}
+            <button onClick={() => setShowSettings(true)}
               className="font-pixel text-[10px] w-full px-8 py-3 border-2 border-border text-muted-foreground
-                hover:border-destructive hover:text-destructive transition-all"
-            >
+                hover:border-secondary hover:text-secondary transition-all">
+              ⚙ SETTINGS
+            </button>
+            <button onClick={onViewLeaderboard}
+              className="font-pixel text-[10px] w-full px-8 py-3 border-2 border-border text-muted-foreground
+                hover:border-accent hover:text-accent transition-all">
+              🏆 LEADERBOARD
+            </button>
+            <button onClick={() => setShowConfirmMenu(true)}
+              className="font-pixel text-[10px] w-full px-8 py-3 border-2 border-border text-muted-foreground
+                hover:border-destructive hover:text-destructive transition-all">
               ✕ MAIN MENU
             </button>
           </div>

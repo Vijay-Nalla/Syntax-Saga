@@ -3,6 +3,8 @@ import { PlayerState, GameState, Language, Question, Platform, EnemyType, ENEMY_
 import { getLevelData } from './levels';
 import { getQuestionsForLevel } from './questions';
 import { renderFrame } from './renderer';
+import { audioManager } from './audioManager';
+import { saveProgress, loadProgress, SavedProgress } from './saveManager';
 
 // ---- Constants ----
 const GRAVITY = 0.6;
@@ -27,7 +29,7 @@ interface Terminal {
   x: number; y: number; questionIndex: number; used: boolean;
 }
 
-// ---- Question tracker ----
+// ---- Question tracker (no repeats within level session) ----
 class QuestionTracker {
   private shuffled: number[] = [];
   private currentIdx = 0;
@@ -91,6 +93,21 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
   const questionTrackerRef = useRef(new QuestionTracker());
   const isUndergroundRef = useRef(false);
   const startTimeRef = useRef(Date.now());
+  const completedLevelsRef = useRef<number[]>([]);
+
+  // ---- Persist progress ----
+  const persistProgress = useCallback(() => {
+    const p = playerRef.current;
+    saveProgress({
+      playerName: p.name,
+      language: p.language,
+      coins: p.coins,
+      xp: p.xp,
+      currentLevel: p.level,
+      completedLevels: completedLevelsRef.current,
+      bestScore: 0,
+    });
+  }, []);
 
   // ---- Level loading ----
   const loadLevel = useCallback((levelNum: number, language: Language) => {
@@ -124,9 +141,27 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     p.language = language;
     playerRef.current = p;
     startTimeRef.current = Date.now();
+    completedLevelsRef.current = [];
     loadLevel(1, language);
     screenRef.current = 'playing';
+    audioManager.startBGM();
     setGameState(prev => ({ ...prev, screen: 'playing', player: { ...p }, currentLevel: 1, startTime: Date.now(), isUnderground: false }));
+  }, [loadLevel]);
+
+  // ---- Resume from saved progress ----
+  const resumeFromSave = useCallback((saved: SavedProgress) => {
+    const p = createPlayer(saved.playerName);
+    p.language = saved.language;
+    p.coins = saved.coins;
+    p.xp = saved.xp;
+    p.level = saved.currentLevel;
+    playerRef.current = p;
+    completedLevelsRef.current = saved.completedLevels;
+    startTimeRef.current = Date.now();
+    loadLevel(saved.currentLevel, saved.language);
+    screenRef.current = 'playing';
+    audioManager.startBGM();
+    setGameState(prev => ({ ...prev, screen: 'playing', player: { ...p }, currentLevel: saved.currentLevel, startTime: Date.now(), isUnderground: false }));
   }, [loadLevel]);
 
   // ---- Pause / Resume ----
@@ -146,10 +181,11 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
 
   // ---- Return to main menu ----
   const returnToMenu = useCallback(() => {
+    persistProgress();
+    audioManager.stopBGM();
     screenRef.current = 'title';
-    playerRef.current = createPlayer(playerRef.current.name);
-    setGameState({ screen: 'title', player: createPlayer(playerRef.current.name), currentLevel: 1, currentQuestion: null, isPaused: false, startTime: Date.now(), isUnderground: false });
-  }, []);
+    setGameState({ screen: 'title', player: { ...playerRef.current }, currentLevel: 1, currentQuestion: null, isPaused: false, startTime: Date.now(), isUnderground: false });
+  }, [persistProgress]);
 
   // ---- Change language mid-game ----
   const changeLanguage = useCallback((language: Language) => {
@@ -167,11 +203,14 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     if (correct) {
       p.xp += 50;
       p.coins += 5;
+      audioManager.correctAnswer();
     } else {
       p.health = Math.max(0, p.health - 15);
+      audioManager.wrongAnswer();
     }
     playerRef.current = p;
     screenRef.current = p.health <= 0 ? 'game-over' : 'playing';
+    if (p.health <= 0) audioManager.gameOver();
     setGameState(prev => ({
       ...prev,
       screen: p.health <= 0 ? 'game-over' : 'playing',
@@ -192,11 +231,22 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
 
   // ---- Next level ----
   const nextLevel = useCallback(() => {
-    const next = playerRef.current.level + 1;
+    const currentLvl = playerRef.current.level;
+    completedLevelsRef.current = [...new Set([...completedLevelsRef.current, currentLvl])];
+    const next = currentLvl + 1;
     if (next > 50) return;
     loadLevel(next, playerRef.current.language);
     screenRef.current = 'playing';
+    persistProgress();
     setGameState(prev => ({ ...prev, screen: 'playing', currentLevel: next, player: { ...playerRef.current }, isUnderground: false }));
+  }, [loadLevel, persistProgress]);
+
+  // ---- Replay current level ----
+  const replayLevel = useCallback(() => {
+    const p = playerRef.current;
+    loadLevel(p.level, p.language);
+    screenRef.current = 'playing';
+    setGameState(prev => ({ ...prev, screen: 'playing', player: { ...playerRef.current }, isUnderground: false }));
   }, [loadLevel]);
 
   // ---- Input handling ----
@@ -222,6 +272,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     if (!ctx) return;
 
     let jumpKeyWasDown = false;
+    let pipeKeyWasDown = false; // edge-detect for pipe entry
 
     const loop = () => {
       if (screenRef.current !== 'playing') {
@@ -244,9 +295,11 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
           p.vy = JUMP_FORCE;
           p.onGround = false;
           jumpCountRef.current = 1;
+          audioManager.jump();
         } else if (jumpCountRef.current < MAX_JUMPS) {
           p.vy = DOUBLE_JUMP_FORCE;
           jumpCountRef.current++;
+          audioManager.doubleJump();
         }
       }
       jumpKeyWasDown = jumpKeyDown;
@@ -285,6 +338,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
           coin.collected = true;
           p.coins++;
           p.xp += 10;
+          audioManager.coinCollect();
         }
       }
 
@@ -298,27 +352,42 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
             enemy.alive = false;
             p.vy = JUMP_FORCE * 0.6;
             p.xp += 25;
+            audioManager.enemyStomp();
           } else {
             const dmg = ENEMY_CONFIG[enemy.type]?.damage || 10;
             p.health = Math.max(0, p.health - dmg);
             p.x += p.facing === 'right' ? -40 : 40;
+            audioManager.enemyDamage();
           }
         }
       }
 
-      // Pipes
+      // Pipes (edge-detect down/up arrow for reliable entry)
+      const pipeKeyDown = keys.has('ArrowDown') || keys.has('s');
+      const pipeUpKey = keys.has('ArrowUp') || keys.has('w');
       for (const pipe of pipesRef.current) {
-        if (Math.abs(p.x + p.width / 2 - pipe.x) < 30 && Math.abs(p.y + p.height - pipe.y) < 30) {
-          const enterKey = pipe.isReturn ? (keys.has('ArrowUp') || keys.has('w')) : (keys.has('ArrowDown') || keys.has('s'));
-          if (enterKey) {
-            p.x = pipe.targetX;
-            p.y = pipe.targetY;
-            p.vy = 0;
-            isUndergroundRef.current = !pipe.isReturn;
-            setGameState(prev => ({ ...prev, isUnderground: isUndergroundRef.current }));
-          }
+        const near = Math.abs(p.x + p.width / 2 - pipe.x) < 35 && Math.abs(p.y + p.height - pipe.y) < 35;
+        if (!near) continue;
+        if (!pipe.isReturn && pipeKeyDown && !pipeKeyWasDown && p.onGround) {
+          p.x = pipe.targetX;
+          p.y = pipe.targetY;
+          p.vy = 0;
+          isUndergroundRef.current = true;
+          audioManager.pipeTransition();
+          setGameState(prev => ({ ...prev, isUnderground: true }));
+          break;
+        }
+        if (pipe.isReturn && pipeUpKey && p.onGround) {
+          p.x = pipe.targetX;
+          p.y = pipe.targetY;
+          p.vy = 0;
+          isUndergroundRef.current = false;
+          audioManager.pipeTransition();
+          setGameState(prev => ({ ...prev, isUnderground: false }));
+          break;
         }
       }
+      pipeKeyWasDown = pipeKeyDown;
 
       // Terminals
       for (const terminal of terminalsRef.current) {
@@ -342,6 +411,8 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       if (p.x > CANVAS_W - 100) {
         if (terminalsRef.current.every(t => t.used)) {
           screenRef.current = 'level-complete';
+          audioManager.levelComplete();
+          persistProgress();
           setGameState(prev => ({ ...prev, screen: 'level-complete', player: { ...p } }));
         }
       }
@@ -349,6 +420,8 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       // Game over
       if (p.health <= 0) {
         screenRef.current = 'game-over';
+        audioManager.gameOver();
+        audioManager.stopBGM();
         setGameState(prev => ({ ...prev, screen: 'game-over', player: { ...p } }));
       }
 
@@ -363,14 +436,16 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
 
     animFrameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [canvasRef]);
+  }, [canvasRef, persistProgress]);
 
   return {
     gameState,
     startGame,
+    resumeFromSave,
     answerQuestion,
     useHint,
     nextLevel,
+    replayLevel,
     pauseGame,
     resumeGame,
     returnToMenu,
