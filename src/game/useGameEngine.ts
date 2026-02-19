@@ -514,7 +514,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
 
     animFrameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [canvasRef, persistProgress, enterUnderground, exitUnderground]);
+  }, [canvasRef, persistProgress]);
 
   return {
     gameState,
