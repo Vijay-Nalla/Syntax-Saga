@@ -441,7 +441,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
               pipeStandingOnRef.current = pipe;
               pipeStandingTimerRef.current = now;
             } else if (pipeStandingTimerRef.current && now - pipeStandingTimerRef.current >= PIPE_ENTRY_DELAY) {
-              enterUnderground(pipe);
+              doEnterUnderground(pipe);
               pipeStandingTimerRef.current = null;
               pipeStandingOnRef.current = null;
             }
