@@ -160,16 +160,13 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     pipeTransitioningRef.current = false;
   }, []);
 
-  // ---- Switch to underground ----
-  const enterUnderground = useCallback((pipe: PipeSpawn) => {
+  // Pipe transition helpers (plain functions, not hooks — avoids hook count changes)
+  const doEnterUnderground = (pipe: PipeSpawn) => {
     if (pipeTransitioningRef.current) return;
     pipeTransitioningRef.current = true;
     const p = playerRef.current;
-
-    // Swap to underground platforms/coins
     platformsRef.current = undergroundPlatformsRef.current;
     coinsRef.current = undergroundCoinsRef.current;
-
     p.x = pipe.targetX;
     p.y = pipe.targetY;
     p.vx = 0;
@@ -178,20 +175,15 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     pipeCooldownRef.current = Date.now() + PIPE_COOLDOWN;
     audioManager.pipeTransition();
     setGameState(prev => ({ ...prev, isUnderground: true, player: { ...p } }));
-
     setTimeout(() => { pipeTransitioningRef.current = false; }, 300);
-  }, []);
+  };
 
-  // ---- Switch back to surface ----
-  const exitUnderground = useCallback((pipe: PipeSpawn) => {
+  const doExitUnderground = (pipe: PipeSpawn) => {
     if (pipeTransitioningRef.current) return;
     pipeTransitioningRef.current = true;
     const p = playerRef.current;
-
-    // Swap back to surface platforms/coins
     platformsRef.current = surfacePlatformsRef.current;
     coinsRef.current = surfaceCoinsRef.current;
-
     p.x = pipe.targetX;
     p.y = pipe.targetY;
     p.vx = 0;
@@ -200,9 +192,8 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     pipeCooldownRef.current = Date.now() + PIPE_COOLDOWN;
     audioManager.pipeTransition();
     setGameState(prev => ({ ...prev, isUnderground: false, player: { ...p } }));
-
     setTimeout(() => { pipeTransitioningRef.current = false; }, 300);
-  }, []);
+  };
 
   // ---- Start game ----
   const startGame = useCallback((language: Language, playerName?: string) => {
@@ -450,7 +441,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
               pipeStandingOnRef.current = pipe;
               pipeStandingTimerRef.current = now;
             } else if (pipeStandingTimerRef.current && now - pipeStandingTimerRef.current >= PIPE_ENTRY_DELAY) {
-              enterUnderground(pipe);
+              doEnterUnderground(pipe);
               pipeStandingTimerRef.current = null;
               pipeStandingOnRef.current = null;
             }
@@ -469,7 +460,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
               Math.abs(p.x + p.width / 2 - pipe.x) < 30 &&
               Math.abs(p.y + p.height - pipe.y) < 20;
             if (near && upKey) {
-              exitUnderground(pipe);
+              doExitUnderground(pipe);
               break;
             }
           }
@@ -523,7 +514,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
 
     animFrameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [canvasRef, persistProgress, enterUnderground, exitUnderground]);
+  }, [canvasRef, persistProgress]);
 
   return {
     gameState,
