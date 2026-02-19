@@ -460,7 +460,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
               Math.abs(p.x + p.width / 2 - pipe.x) < 30 &&
               Math.abs(p.y + p.height - pipe.y) < 20;
             if (near && upKey) {
-              exitUnderground(pipe);
+              doExitUnderground(pipe);
               break;
             }
           }
