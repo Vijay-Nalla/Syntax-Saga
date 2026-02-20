@@ -246,14 +246,34 @@ function generateLevel(levelNum: number) {
     });
   }
 
-  // Pipes from level 3+
+  // Pipes from level 3+ — placed in open areas away from platforms
   const pipes: PipeSpawn[] = [];
   if (levelNum >= 3) {
-    const pipeX = snap(800 + rand() * 600);
-    // Entry pipe on ground surface
-    pipes.push({ x: pipeX, y: GROUND_Y - 50, targetX: 100, targetY: 500, isReturn: false });
-    // Return pipe inside underground
-    pipes.push({ x: snap(pipeX + 600), y: 500, targetX: pipeX + 80, targetY: GROUND_Y - 60, isReturn: true });
+    // Find a clear spot on the ground with no platform above
+    const isOpenSpot = (testX: number): boolean => {
+      for (const plat of platforms) {
+        if (plat.y >= GROUND_Y) continue; // skip ground itself
+        // Check if pipe x overlaps with platform horizontally AND platform is above
+        if (testX > plat.x - 60 && testX < plat.x + plat.width + 60) return false;
+      }
+      return true;
+    };
+
+    // Try to find an open entry spot
+    let entryX = snap(800);
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const candidate = snap(400 + rand() * 1400);
+      if (isOpenSpot(candidate)) { entryX = candidate; break; }
+    }
+
+    // Entry pipe on ground surface (open area)
+    pipes.push({ x: entryX, y: GROUND_Y - 50, targetX: 100, targetY: 500, isReturn: false });
+
+    // Return pipe in underground — also in open area
+    let exitX = snap(entryX + 800);
+    if (exitX > CANVAS_W - 200) exitX = snap(CANVAS_W - 300);
+    // Return pipe: player exits back to ground near entry
+    pipes.push({ x: exitX, y: 500, targetX: entryX + 80, targetY: GROUND_Y - 60, isReturn: true });
   }
 
   // Underground

@@ -457,15 +457,21 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
           }
         }
 
-        // Return pipes: press UP arrow while standing on return pipe
+        // Return pipes: automatic exit when player stands on return pipe
         if (isUndergroundRef.current) {
-          const upKey = keys.has('ArrowUp') || keys.has('w');
           for (const pipe of pipesRef.current) {
             if (!pipe.isReturn) continue;
             const near = p.onGround &&
               Math.abs(p.x + p.width / 2 - pipe.x) < 30;
-            if (near && upKey) {
-              doExitUnderground(pipe);
+            if (near) {
+              if (pipeStandingOnRef.current !== pipe) {
+                pipeStandingOnRef.current = pipe;
+                pipeStandingTimerRef.current = now;
+              } else if (pipeStandingTimerRef.current && now - pipeStandingTimerRef.current >= PIPE_ENTRY_DELAY) {
+                doExitUnderground(pipe);
+                pipeStandingTimerRef.current = null;
+                pipeStandingOnRef.current = null;
+              }
               break;
             }
           }
