@@ -457,8 +457,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
           for (const pipe of pipesRef.current) {
             if (!pipe.isReturn) continue;
             const near = p.onGround &&
-              Math.abs(p.x + p.width / 2 - pipe.x) < 30 &&
-              Math.abs(p.y + p.height - pipe.y) < 20;
+              Math.abs(p.x + p.width / 2 - pipe.x) < 30;
             if (near && upKey) {
               doExitUnderground(pipe);
               break;
