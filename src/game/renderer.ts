@@ -106,7 +106,7 @@ export function renderFrame(
       ctx.textAlign = 'center';
       ctx.fillText('AUTO ENTER', px, pipe.y - 10);
     }
-    if (pipe.isReturn && Math.abs(p.x + p.width / 2 - pipe.x) < 40 && Math.abs(p.y + p.height - pipe.y) < 30) {
+    if (pipe.isReturn && Math.abs(p.x + p.width / 2 - pipe.x) < 40 && Math.abs(p.y + p.height - pipe.y) < 60) {
       ctx.fillStyle = '#00ff66';
       ctx.font = '8px "Press Start 2P"';
       ctx.textAlign = 'center';
