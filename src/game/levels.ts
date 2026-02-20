@@ -266,8 +266,8 @@ function generateLevel(levelNum: number) {
       if (isOpenSpot(candidate)) { entryX = candidate; break; }
     }
 
-    // Entry pipe on ground surface (open area)
-    pipes.push({ x: entryX, y: GROUND_Y - 50, targetX: 100, targetY: 500, isReturn: false });
+    // Entry pipe on ground surface (open area, sitting on floor)
+    pipes.push({ x: entryX, y: GROUND_Y - 50, targetX: 100, targetY: 550 - 50, isReturn: false });
 
     // Return pipe in underground — also in open area
     let exitX = snap(entryX + 800);
