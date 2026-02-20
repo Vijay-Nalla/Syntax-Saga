@@ -110,7 +110,7 @@ export function renderFrame(
       ctx.fillStyle = '#00ff66';
       ctx.font = '8px "Press Start 2P"';
       ctx.textAlign = 'center';
-      ctx.fillText('[↑] EXIT', px, pipe.y - 10);
+      ctx.fillText('AUTO EXIT', px, pipe.y - 10);
     }
     ctx.restore();
   }
