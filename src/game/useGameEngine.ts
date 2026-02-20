@@ -428,13 +428,13 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       // ---- Pipe system: auto-entry (no down arrow needed) ----
       const now = Date.now();
       if (!pipeTransitioningRef.current && now > pipeCooldownRef.current) {
-        // Entry pipes: auto-enter when player lands on top
+        // Entry pipes: auto-enter when player walks over pipe on ground
         for (const pipe of pipesRef.current) {
           if (pipe.isReturn) continue;
-          if (isUndergroundRef.current) continue; // only surface entry pipes
+          if (isUndergroundRef.current) continue;
+          // Check horizontal proximity only — pipe sits on ground, player walks on ground
           const onPipe = p.onGround &&
-            Math.abs(p.x + p.width / 2 - pipe.x) < 30 &&
-            Math.abs(p.y + p.height - pipe.y) < 20;
+            Math.abs(p.x + p.width / 2 - pipe.x) < 30;
 
           if (onPipe) {
             if (pipeStandingOnRef.current !== pipe) {
