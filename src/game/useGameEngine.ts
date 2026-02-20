@@ -101,8 +101,10 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
   // Underground data refs
   const undergroundPlatformsRef = useRef<Platform[]>([]);
   const undergroundCoinsRef = useRef<Coin[]>([]);
+  const undergroundEnemiesRef = useRef<Enemy[]>([]);
   const surfacePlatformsRef = useRef<Platform[]>([]);
   const surfaceCoinsRef = useRef<Coin[]>([]);
+  const surfaceEnemiesRef = useRef<Enemy[]>([]);
 
   // Pipe auto-entry state
   const pipeStandingTimerRef = useRef<number | null>(null);
