@@ -101,8 +101,10 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
   // Underground data refs
   const undergroundPlatformsRef = useRef<Platform[]>([]);
   const undergroundCoinsRef = useRef<Coin[]>([]);
+  const undergroundEnemiesRef = useRef<Enemy[]>([]);
   const surfacePlatformsRef = useRef<Platform[]>([]);
   const surfaceCoinsRef = useRef<Coin[]>([]);
+  const surfaceEnemiesRef = useRef<Enemy[]>([]);
 
   // Pipe auto-entry state
   const pipeStandingTimerRef = useRef<number | null>(null);
@@ -140,9 +142,11 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     // Store underground data
     undergroundPlatformsRef.current = data.undergroundPlatforms || [];
     undergroundCoinsRef.current = (data.undergroundCoins || []).map((c: CoinSpawn) => ({ ...c, collected: false }));
+    undergroundEnemiesRef.current = (data.undergroundEnemies || []).map((e: any) => ({ ...e, startX: e.x, dir: 1, alive: true }));
     // Store surface data for switching back
     surfacePlatformsRef.current = [...platformsRef.current];
     surfaceCoinsRef.current = [...coinsRef.current];
+    surfaceEnemiesRef.current = [...enemiesRef.current];
 
     const p = createPlayer(playerRef.current.name);
     p.language = language;
@@ -167,6 +171,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     const p = playerRef.current;
     platformsRef.current = undergroundPlatformsRef.current;
     coinsRef.current = undergroundCoinsRef.current;
+    enemiesRef.current = undergroundEnemiesRef.current;
     p.x = pipe.targetX;
     p.y = pipe.targetY;
     p.vx = 0;
@@ -184,6 +189,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     const p = playerRef.current;
     platformsRef.current = surfacePlatformsRef.current;
     coinsRef.current = surfaceCoinsRef.current;
+    enemiesRef.current = surfaceEnemiesRef.current;
     p.x = pipe.targetX;
     p.y = pipe.targetY;
     p.vx = 0;
@@ -428,13 +434,13 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       // ---- Pipe system: auto-entry (no down arrow needed) ----
       const now = Date.now();
       if (!pipeTransitioningRef.current && now > pipeCooldownRef.current) {
-        // Entry pipes: auto-enter when player lands on top
+        // Entry pipes: auto-enter when player walks over pipe on ground
         for (const pipe of pipesRef.current) {
           if (pipe.isReturn) continue;
-          if (isUndergroundRef.current) continue; // only surface entry pipes
+          if (isUndergroundRef.current) continue;
+          // Check horizontal proximity only — pipe sits on ground, player walks on ground
           const onPipe = p.onGround &&
-            Math.abs(p.x + p.width / 2 - pipe.x) < 30 &&
-            Math.abs(p.y + p.height - pipe.y) < 20;
+            Math.abs(p.x + p.width / 2 - pipe.x) < 30;
 
           if (onPipe) {
             if (pipeStandingOnRef.current !== pipe) {
@@ -457,8 +463,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
           for (const pipe of pipesRef.current) {
             if (!pipe.isReturn) continue;
             const near = p.onGround &&
-              Math.abs(p.x + p.width / 2 - pipe.x) < 30 &&
-              Math.abs(p.y + p.height - pipe.y) < 20;
+              Math.abs(p.x + p.width / 2 - pipe.x) < 30;
             if (near && upKey) {
               doExitUnderground(pipe);
               break;
