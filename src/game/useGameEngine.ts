@@ -142,9 +142,11 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     // Store underground data
     undergroundPlatformsRef.current = data.undergroundPlatforms || [];
     undergroundCoinsRef.current = (data.undergroundCoins || []).map((c: CoinSpawn) => ({ ...c, collected: false }));
+    undergroundEnemiesRef.current = (data.undergroundEnemies || []).map((e: any) => ({ ...e, startX: e.x, dir: 1, alive: true }));
     // Store surface data for switching back
     surfacePlatformsRef.current = [...platformsRef.current];
     surfaceCoinsRef.current = [...coinsRef.current];
+    surfaceEnemiesRef.current = [...enemiesRef.current];
 
     const p = createPlayer(playerRef.current.name);
     p.language = language;
