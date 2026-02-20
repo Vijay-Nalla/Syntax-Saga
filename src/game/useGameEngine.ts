@@ -189,6 +189,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     const p = playerRef.current;
     platformsRef.current = surfacePlatformsRef.current;
     coinsRef.current = surfaceCoinsRef.current;
+    enemiesRef.current = surfaceEnemiesRef.current;
     p.x = pipe.targetX;
     p.y = pipe.targetY;
     p.vx = 0;
