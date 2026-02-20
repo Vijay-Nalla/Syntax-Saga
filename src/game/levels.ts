@@ -272,8 +272,8 @@ function generateLevel(levelNum: number) {
     // Return pipe in underground — also in open area
     let exitX = snap(entryX + 800);
     if (exitX > CANVAS_W - 200) exitX = snap(CANVAS_W - 300);
-    // Return pipe: player exits back to ground near entry
-    pipes.push({ x: exitX, y: 500, targetX: entryX + 80, targetY: GROUND_Y - 60, isReturn: true });
+    // Return pipe in underground — on underground floor (y=550)
+    pipes.push({ x: exitX, y: 550 - 50, targetX: entryX + 80, targetY: GROUND_Y - 60, isReturn: true });
   }
 
   // Underground
