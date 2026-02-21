@@ -50,7 +50,7 @@ export default function CodingChallenge({ question, onAnswer, playerCoins, onUse
         style={{ animation: 'fadeInUp 0.3s ease-out' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <span className="font-pixel text-[9px] text-primary text-glow-green">{typeLabel}</span>
+          <span className="font-pixel text-[9px] text-primary text-glow-primary">{typeLabel}</span>
           <span className="font-pixel text-[9px] text-accent">SYSTEM TERMINAL</span>
         </div>
 
