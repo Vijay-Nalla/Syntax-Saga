@@ -509,7 +509,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
             terminal.used = true;
             const questions = levelQuestionsRef.current;
             if (questions.length > 0) {
-              const qIndex = questionTrackerRef.current.next();
+              const qIndex = questionTrackerRef.current.next(questions);
               const q = questions[qIndex % questions.length];
               if (q) {
                 screenRef.current = 'challenge';
