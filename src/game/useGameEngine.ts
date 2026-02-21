@@ -233,6 +233,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     playerRef.current = p;
     startTimeRef.current = Date.now();
     completedLevelsRef.current = [];
+    questionTrackerRef.current.resetSession();
     loadLevel(1, language);
     screenRef.current = 'playing';
     audioManager.startBGM();
