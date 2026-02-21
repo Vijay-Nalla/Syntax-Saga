@@ -34,7 +34,7 @@ interface TierCfg {
 }
 
 const TIER_CONFIG: Record<Tier, TierCfg> = {
-  early:    { platWidthMin: 200, platWidthMax: 320, movingChance: 0,    movingRange: 0,   movingSpeed: 0 },
+  early:    { platWidthMin: 200, platWidthMax: 320, movingChance: 0.15, movingRange: 60,  movingSpeed: 0.8 },
   mid:      { platWidthMin: 160, platWidthMax: 240, movingChance: 0.25, movingRange: 80,  movingSpeed: 1 },
   advanced: { platWidthMin: 120, platWidthMax: 200, movingChance: 0.4,  movingRange: 120, movingSpeed: 1.5 },
 };
