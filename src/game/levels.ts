@@ -246,41 +246,7 @@ function generateLevel(levelNum: number) {
     });
   }
 
-  // Pipes from level 3+ — only ONE entry pipe on ground, ONE return pipe underground
-  const pipes: PipeSpawn[] = [];
-  if (levelNum >= 3) {
-    // Check if a spot has NO platforms above it (clear sky)
-    const isOpenSpot = (testX: number, allPlats: Platform[], floorY: number): boolean => {
-      for (const plat of allPlats) {
-        if (plat.y >= floorY) continue; // skip ground itself
-        // Check if pipe x overlaps with platform horizontally AND platform is above
-        if (testX > plat.x - 80 && testX < plat.x + plat.width + 80) return false;
-      }
-      return true;
-    };
-
-    // Find open entry spot on ground level (no platforms above)
-    let entryX = snap(800);
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const candidate = snap(300 + rand() * 1600);
-      if (isOpenSpot(candidate, platforms, GROUND_Y)) { entryX = candidate; break; }
-    }
-
-    // Single entry pipe on ground floor
-    pipes.push({ x: entryX, y: GROUND_Y - 50, targetX: 100, targetY: 550 - 50, isReturn: false });
-
-    // Return pipe in underground — on underground floor, also in open spot
-    let exitX = snap(entryX + 800);
-    if (exitX > CANVAS_W - 200) exitX = snap(CANVAS_W - 300);
-    // Ensure underground return pipe is also in an open spot
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const candidate = snap(400 + rand() * 1600);
-      if (isOpenSpot(candidate, undergroundPlatforms.length > 0 ? undergroundPlatforms : [], 550)) { exitX = candidate; break; }
-    }
-    pipes.push({ x: exitX, y: 550 - 50, targetX: entryX + 80, targetY: GROUND_Y - 60, isReturn: true });
-  }
-
-  // Underground
+  // Underground (generate before pipes so we can check for open spots)
   const undergroundPlatforms = levelNum >= 3 ? generateUndergroundPlatforms(levelNum, rand) : [];
   const undergroundEnemies = levelNum >= 3 ? generateUndergroundEnemies(levelNum, rand) : [];
 
@@ -296,6 +262,34 @@ function generateLevel(levelNum: number) {
     for (let i = 0; i < 4; i++) {
       undergroundCoins.push({ x: snap(150 + rand() * 1500), y: 510 });
     }
+  }
+
+  // Pipes from level 3+ — only ONE entry pipe on ground, ONE return pipe underground
+  const pipes: PipeSpawn[] = [];
+  if (levelNum >= 3) {
+    const isOpenSpot = (testX: number, allPlats: Platform[], floorY: number): boolean => {
+      for (const plat of allPlats) {
+        if (plat.y >= floorY) continue;
+        if (testX > plat.x - 80 && testX < plat.x + plat.width + 80) return false;
+      }
+      return true;
+    };
+
+    let entryX = snap(800);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const candidate = snap(300 + rand() * 1600);
+      if (isOpenSpot(candidate, platforms, GROUND_Y)) { entryX = candidate; break; }
+    }
+
+    pipes.push({ x: entryX, y: GROUND_Y - 50, targetX: 100, targetY: 550 - 50, isReturn: false });
+
+    let exitX = snap(entryX + 800);
+    if (exitX > CANVAS_W - 200) exitX = snap(CANVAS_W - 300);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const candidate = snap(400 + rand() * 1600);
+      if (isOpenSpot(candidate, undergroundPlatforms, 550)) { exitX = candidate; break; }
+    }
+    pipes.push({ x: exitX, y: 550 - 50, targetX: entryX + 80, targetY: GROUND_Y - 60, isReturn: true });
   }
 
   return { platforms, coins, enemies, terminals, pipes, undergroundPlatforms, undergroundCoins, undergroundEnemies };
