@@ -46,11 +46,11 @@ export default function CodingChallenge({ question, onAnswer, playerCoins, onUse
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-2xl mx-4 border-2 border-primary rounded-lg bg-card p-6 box-glow-green"
+      <div className="relative z-10 w-full max-w-2xl mx-4 border-2 border-primary rounded-lg bg-card p-6 box-glow-primary"
         style={{ animation: 'fadeInUp 0.3s ease-out' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <span className="font-pixel text-[9px] text-primary text-glow-green">{typeLabel}</span>
+          <span className="font-pixel text-[9px] text-primary text-glow-primary">{typeLabel}</span>
           <span className="font-pixel text-[9px] text-accent">SYSTEM TERMINAL</span>
         </div>
 
@@ -141,7 +141,7 @@ export default function CodingChallenge({ question, onAnswer, playerCoins, onUse
         {/* Result */}
         {answered && (
           <div className={`border-2 rounded p-4 ${isCorrect ? 'border-primary bg-primary/5' : 'border-destructive bg-destructive/5'}`}>
-            <p className={`font-pixel text-[10px] mb-2 ${isCorrect ? 'text-primary text-glow-green' : 'text-destructive'}`}>
+            <p className={`font-pixel text-[10px] mb-2 ${isCorrect ? 'text-primary text-glow-primary' : 'text-destructive'}`}>
               {isCorrect ? '✓ CORRECT! SYSTEM RESTORED.' : '✗ ERROR! SYSTEM DAMAGED.'}
             </p>
             <p className="font-mono text-xs text-muted-foreground">{question.explanation}</p>

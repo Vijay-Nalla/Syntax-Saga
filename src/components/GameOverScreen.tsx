@@ -35,7 +35,7 @@ export default function GameOverScreen({ player, onRestart, type, onNextLevel, o
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
       <div className="relative z-10 text-center max-w-md mx-4" style={{ animation: 'fadeInUp 0.5s ease-out' }}>
-        <h2 className={`font-display text-4xl md:text-5xl font-black mb-4 ${isWin ? 'text-primary text-glow-green' : 'text-destructive'}`}>
+        <h2 className={`font-display text-4xl md:text-5xl font-black mb-4 ${isWin ? 'text-primary text-glow-primary' : 'text-destructive'}`}>
           {isWin ? 'LEVEL CLEARED!' : 'SYSTEM CRASH'}
         </h2>
 
@@ -66,7 +66,7 @@ export default function GameOverScreen({ player, onRestart, type, onNextLevel, o
               <button
                 onClick={onNextLevel}
                 className="font-pixel text-[10px] px-8 py-3 border-2 border-primary text-primary
-                  hover:bg-primary hover:text-primary-foreground transition-all box-glow-green"
+                  hover:bg-primary hover:text-primary-foreground transition-all box-glow-primary"
               >
                 NEXT LEVEL
               </button>

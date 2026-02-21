@@ -31,10 +31,10 @@ export default function PauseMenu({ onResume, onMainMenu, onChangeLanguage, onVi
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
       <div
-        className="relative z-10 w-full max-w-md mx-4 border-2 border-primary rounded-lg bg-card p-8 box-glow-green"
+        className="relative z-10 w-full max-w-md mx-4 border-2 border-primary rounded-lg bg-card p-8 box-glow-primary"
         style={{ animation: 'fadeInUp 0.3s ease-out' }}
       >
-        <h2 className="font-display text-3xl font-black text-primary text-glow-green text-center mb-2">
+        <h2 className="font-display text-3xl font-black text-primary text-glow-primary text-center mb-2">
           PAUSED
         </h2>
         <p className="font-mono text-xs text-muted-foreground text-center mb-8">
@@ -128,7 +128,7 @@ export default function PauseMenu({ onResume, onMainMenu, onChangeLanguage, onVi
           <div className="flex flex-col gap-3">
             <button onClick={onResume}
               className="font-pixel text-[10px] w-full px-8 py-4 border-2 border-primary text-primary
-                hover:bg-primary hover:text-primary-foreground transition-all box-glow-green">
+                hover:bg-primary hover:text-primary-foreground transition-all box-glow-primary">
               ▶ RESUME GAME
             </button>
             <button onClick={() => setShowLanguages(true)}

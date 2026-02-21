@@ -10,7 +10,7 @@ export default function LanguageSelect({ onSelect }: LanguageSelectProps) {
       <div className="absolute inset-0 scanlines pointer-events-none z-10" />
 
       <div className="relative z-20 text-center px-4 max-w-5xl w-full">
-        <h2 className="font-display text-3xl md:text-4xl font-bold text-primary text-glow-green mb-3">
+        <h2 className="font-display text-3xl md:text-4xl font-bold text-primary text-glow-primary mb-3">
           LANGUAGE SELECTION PORTAL
         </h2>
         <p className="font-mono text-sm text-muted-foreground mb-12">

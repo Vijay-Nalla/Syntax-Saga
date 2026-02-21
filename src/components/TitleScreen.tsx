@@ -86,7 +86,7 @@ export default function TitleScreen({ onStart, onLeaderboard }: TitleScreenProps
               onClick={onStart}
               className="font-pixel text-sm px-10 py-4 border-2 border-primary text-primary bg-transparent
                 hover:bg-primary hover:text-primary-foreground transition-all duration-300
-                box-glow-green hover:scale-105 active:scale-95"
+                box-glow-primary hover:scale-105 active:scale-95"
               style={{ animation: 'fadeInUp 0.5s ease-out' }}
             >
               PRESS START

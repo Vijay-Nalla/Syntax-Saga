@@ -9,7 +9,7 @@ interface GameHUDProps {
 
 export default function GameHUD({ player, levelNum, levelTopic, isUnderground }: GameHUDProps) {
   const healthPercent = player.health;
-  const healthColor = healthPercent > 60 ? 'hsl(var(--neon-green))' : healthPercent > 30 ? 'hsl(var(--neon-yellow))' : 'hsl(var(--destructive))';
+  const healthColor = healthPercent > 60 ? 'hsl(var(--neon-blue))' : healthPercent > 30 ? 'hsl(var(--neon-yellow))' : 'hsl(var(--destructive))';
 
   const rank = levelNum <= 10 ? 'Rookie' : levelNum <= 20 ? 'Loop Warrior' : levelNum <= 30 ? 'Function Knight' : levelNum <= 40 ? 'Data Commander' : 'Grandmaster';
 

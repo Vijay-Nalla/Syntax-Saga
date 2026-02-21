@@ -36,11 +36,16 @@ interface Terminal {
 class QuestionTracker {
   private shuffled: number[] = [];
   private currentIdx = 0;
+  private askedQuestions = new Set<string>(); // Track by question text globally
 
   reset(poolSize: number) {
     this.shuffled = Array.from({ length: poolSize }, (_, i) => i);
     this.shuffle();
     this.currentIdx = 0;
+  }
+
+  resetSession() {
+    this.askedQuestions.clear();
   }
 
   private shuffle() {
@@ -50,12 +55,31 @@ class QuestionTracker {
     }
   }
 
-  next(): number {
+  next(questions: { question: string }[]): number {
+    // Try to find an unasked question
+    const poolSize = this.shuffled.length;
+    for (let attempt = 0; attempt < poolSize * 2; attempt++) {
+      if (this.currentIdx >= this.shuffled.length) {
+        this.shuffle();
+        this.currentIdx = 0;
+      }
+      const idx = this.shuffled[this.currentIdx++];
+      const q = questions[idx % questions.length];
+      if (q && !this.askedQuestions.has(q.question)) {
+        this.askedQuestions.add(q.question);
+        return idx;
+      }
+    }
+    // If all questions exhausted, clear history and return next
+    this.askedQuestions.clear();
     if (this.currentIdx >= this.shuffled.length) {
       this.shuffle();
       this.currentIdx = 0;
     }
-    return this.shuffled[this.currentIdx++];
+    const idx = this.shuffled[this.currentIdx++];
+    const q = questions[idx % questions.length];
+    if (q) this.askedQuestions.add(q.question);
+    return idx;
   }
 }
 
@@ -209,6 +233,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     playerRef.current = p;
     startTimeRef.current = Date.now();
     completedLevelsRef.current = [];
+    questionTrackerRef.current.resetSession();
     loadLevel(1, language);
     screenRef.current = 'playing';
     audioManager.startBGM();
@@ -485,7 +510,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
             terminal.used = true;
             const questions = levelQuestionsRef.current;
             if (questions.length > 0) {
-              const qIndex = questionTrackerRef.current.next();
+              const qIndex = questionTrackerRef.current.next(questions);
               const q = questions[qIndex % questions.length];
               if (q) {
                 screenRef.current = 'challenge';

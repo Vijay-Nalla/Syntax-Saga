@@ -19,9 +19,9 @@ export default function PlayerNameEntry({ onSubmit, onBack }: PlayerNameEntryPro
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
       <div className="absolute inset-0 scanlines pointer-events-none" />
-      <div className="relative z-10 w-full max-w-md mx-4 border-2 border-primary rounded-lg bg-card p-8 box-glow-green"
+      <div className="relative z-10 w-full max-w-md mx-4 border-2 border-primary rounded-lg bg-card p-8 box-glow-primary"
         style={{ animation: 'fadeInUp 0.3s ease-out' }}>
-        <h2 className="font-display text-2xl font-black text-primary text-glow-green text-center mb-2">
+        <h2 className="font-display text-2xl font-black text-primary text-glow-primary text-center mb-2">
           IDENTIFY YOURSELF
         </h2>
         <p className="font-mono text-xs text-muted-foreground text-center mb-6">
@@ -45,7 +45,7 @@ export default function PlayerNameEntry({ onSubmit, onBack }: PlayerNameEntryPro
         <button
           onClick={handleSubmit}
           className="w-full font-pixel text-[10px] px-8 py-4 border-2 border-primary text-primary
-            hover:bg-primary hover:text-primary-foreground transition-all box-glow-green mt-4"
+            hover:bg-primary hover:text-primary-foreground transition-all box-glow-primary mt-4"
         >
           JACK IN
         </button>
