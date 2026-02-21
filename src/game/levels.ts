@@ -34,7 +34,7 @@ interface TierCfg {
 }
 
 const TIER_CONFIG: Record<Tier, TierCfg> = {
-  early:    { platWidthMin: 200, platWidthMax: 320, movingChance: 0,    movingRange: 0,   movingSpeed: 0 },
+  early:    { platWidthMin: 200, platWidthMax: 320, movingChance: 0.15, movingRange: 60,  movingSpeed: 0.8 },
   mid:      { platWidthMin: 160, platWidthMax: 240, movingChance: 0.25, movingRange: 80,  movingSpeed: 1 },
   advanced: { platWidthMin: 120, platWidthMax: 200, movingChance: 0.4,  movingRange: 120, movingSpeed: 1.5 },
 };
@@ -246,37 +246,7 @@ function generateLevel(levelNum: number) {
     });
   }
 
-  // Pipes from level 3+ — placed in open areas away from platforms
-  const pipes: PipeSpawn[] = [];
-  if (levelNum >= 3) {
-    // Find a clear spot on the ground with no platform above
-    const isOpenSpot = (testX: number): boolean => {
-      for (const plat of platforms) {
-        if (plat.y >= GROUND_Y) continue; // skip ground itself
-        // Check if pipe x overlaps with platform horizontally AND platform is above
-        if (testX > plat.x - 60 && testX < plat.x + plat.width + 60) return false;
-      }
-      return true;
-    };
-
-    // Try to find an open entry spot
-    let entryX = snap(800);
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const candidate = snap(400 + rand() * 1400);
-      if (isOpenSpot(candidate)) { entryX = candidate; break; }
-    }
-
-    // Entry pipe on ground surface (open area, sitting on floor)
-    pipes.push({ x: entryX, y: GROUND_Y - 50, targetX: 100, targetY: 550 - 50, isReturn: false });
-
-    // Return pipe in underground — also in open area
-    let exitX = snap(entryX + 800);
-    if (exitX > CANVAS_W - 200) exitX = snap(CANVAS_W - 300);
-    // Return pipe in underground — on underground floor (y=550)
-    pipes.push({ x: exitX, y: 550 - 50, targetX: entryX + 80, targetY: GROUND_Y - 60, isReturn: true });
-  }
-
-  // Underground
+  // Underground (generate before pipes so we can check for open spots)
   const undergroundPlatforms = levelNum >= 3 ? generateUndergroundPlatforms(levelNum, rand) : [];
   const undergroundEnemies = levelNum >= 3 ? generateUndergroundEnemies(levelNum, rand) : [];
 
@@ -292,6 +262,34 @@ function generateLevel(levelNum: number) {
     for (let i = 0; i < 4; i++) {
       undergroundCoins.push({ x: snap(150 + rand() * 1500), y: 510 });
     }
+  }
+
+  // Pipes from level 3+ — only ONE entry pipe on ground, ONE return pipe underground
+  const pipes: PipeSpawn[] = [];
+  if (levelNum >= 3) {
+    const isOpenSpot = (testX: number, allPlats: Platform[], floorY: number): boolean => {
+      for (const plat of allPlats) {
+        if (plat.y >= floorY) continue;
+        if (testX > plat.x - 80 && testX < plat.x + plat.width + 80) return false;
+      }
+      return true;
+    };
+
+    let entryX = snap(800);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const candidate = snap(300 + rand() * 1600);
+      if (isOpenSpot(candidate, platforms, GROUND_Y)) { entryX = candidate; break; }
+    }
+
+    pipes.push({ x: entryX, y: GROUND_Y - 50, targetX: 100, targetY: 550 - 50, isReturn: false });
+
+    let exitX = snap(entryX + 800);
+    if (exitX > CANVAS_W - 200) exitX = snap(CANVAS_W - 300);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const candidate = snap(400 + rand() * 1600);
+      if (isOpenSpot(candidate, undergroundPlatforms, 550)) { exitX = candidate; break; }
+    }
+    pipes.push({ x: exitX, y: 550 - 50, targetX: entryX + 80, targetY: GROUND_Y - 60, isReturn: true });
   }
 
   return { platforms, coins, enemies, terminals, pipes, undergroundPlatforms, undergroundCoins, undergroundEnemies };
