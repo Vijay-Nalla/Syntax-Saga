@@ -34,7 +34,7 @@ export default function PauseMenu({ onResume, onMainMenu, onChangeLanguage, onVi
         className="relative z-10 w-full max-w-md mx-4 border-2 border-primary rounded-lg bg-card p-8 box-glow-primary"
         style={{ animation: 'fadeInUp 0.3s ease-out' }}
       >
-        <h2 className="font-display text-3xl font-black text-primary text-glow-green text-center mb-2">
+        <h2 className="font-display text-3xl font-black text-primary text-glow-primary text-center mb-2">
           PAUSED
         </h2>
         <p className="font-mono text-xs text-muted-foreground text-center mb-8">
