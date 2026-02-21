@@ -35,7 +35,7 @@ export default function GameOverScreen({ player, onRestart, type, onNextLevel, o
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
       <div className="relative z-10 text-center max-w-md mx-4" style={{ animation: 'fadeInUp 0.5s ease-out' }}>
-        <h2 className={`font-display text-4xl md:text-5xl font-black mb-4 ${isWin ? 'text-primary text-glow-green' : 'text-destructive'}`}>
+        <h2 className={`font-display text-4xl md:text-5xl font-black mb-4 ${isWin ? 'text-primary text-glow-primary' : 'text-destructive'}`}>
           {isWin ? 'LEVEL CLEARED!' : 'SYSTEM CRASH'}
         </h2>
 
