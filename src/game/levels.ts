@@ -246,33 +246,37 @@ function generateLevel(levelNum: number) {
     });
   }
 
-  // Pipes from level 3+ — placed in open areas away from platforms
+  // Pipes from level 3+ — only ONE entry pipe on ground, ONE return pipe underground
   const pipes: PipeSpawn[] = [];
   if (levelNum >= 3) {
-    // Find a clear spot on the ground with no platform above
-    const isOpenSpot = (testX: number): boolean => {
-      for (const plat of platforms) {
-        if (plat.y >= GROUND_Y) continue; // skip ground itself
+    // Check if a spot has NO platforms above it (clear sky)
+    const isOpenSpot = (testX: number, allPlats: Platform[], floorY: number): boolean => {
+      for (const plat of allPlats) {
+        if (plat.y >= floorY) continue; // skip ground itself
         // Check if pipe x overlaps with platform horizontally AND platform is above
-        if (testX > plat.x - 60 && testX < plat.x + plat.width + 60) return false;
+        if (testX > plat.x - 80 && testX < plat.x + plat.width + 80) return false;
       }
       return true;
     };
 
-    // Try to find an open entry spot
+    // Find open entry spot on ground level (no platforms above)
     let entryX = snap(800);
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const candidate = snap(400 + rand() * 1400);
-      if (isOpenSpot(candidate)) { entryX = candidate; break; }
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const candidate = snap(300 + rand() * 1600);
+      if (isOpenSpot(candidate, platforms, GROUND_Y)) { entryX = candidate; break; }
     }
 
-    // Entry pipe on ground surface (open area, sitting on floor)
+    // Single entry pipe on ground floor
     pipes.push({ x: entryX, y: GROUND_Y - 50, targetX: 100, targetY: 550 - 50, isReturn: false });
 
-    // Return pipe in underground — also in open area
+    // Return pipe in underground — on underground floor, also in open spot
     let exitX = snap(entryX + 800);
     if (exitX > CANVAS_W - 200) exitX = snap(CANVAS_W - 300);
-    // Return pipe in underground — on underground floor (y=550)
+    // Ensure underground return pipe is also in an open spot
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const candidate = snap(400 + rand() * 1600);
+      if (isOpenSpot(candidate, undergroundPlatforms.length > 0 ? undergroundPlatforms : [], 550)) { exitX = candidate; break; }
+    }
     pipes.push({ x: exitX, y: 550 - 50, targetX: entryX + 80, targetY: GROUND_Y - 60, isReturn: true });
   }
 

@@ -55,7 +55,16 @@ export default function TitleScreen({ onStart, onLeaderboard }: TitleScreenProps
       </div>
 
       <div className="relative z-20 text-center px-8 max-w-3xl">
-        <h1 className="font-display text-5xl md:text-7xl font-black text-primary text-glow-green mb-2 glitch-text">
+        <h1
+          className="font-display text-5xl md:text-7xl font-black mb-2 glitch-text"
+          style={{
+            background: 'linear-gradient(135deg, hsl(200, 90%, 70%), hsl(350, 80%, 65%))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            filter: 'drop-shadow(0 0 20px hsla(200, 90%, 70%, 0.5)) drop-shadow(0 0 40px hsla(350, 80%, 65%, 0.3))',
+          }}
+        >
           SYNTAX SAGA
         </h1>
         <p className="font-pixel text-xs md:text-sm text-neon-cyan text-glow-cyan mb-12 tracking-widest">
