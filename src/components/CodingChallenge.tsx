@@ -141,7 +141,7 @@ export default function CodingChallenge({ question, onAnswer, playerCoins, onUse
         {/* Result */}
         {answered && (
           <div className={`border-2 rounded p-4 ${isCorrect ? 'border-primary bg-primary/5' : 'border-destructive bg-destructive/5'}`}>
-            <p className={`font-pixel text-[10px] mb-2 ${isCorrect ? 'text-primary text-glow-green' : 'text-destructive'}`}>
+            <p className={`font-pixel text-[10px] mb-2 ${isCorrect ? 'text-primary text-glow-primary' : 'text-destructive'}`}>
               {isCorrect ? '✓ CORRECT! SYSTEM RESTORED.' : '✗ ERROR! SYSTEM DAMAGED.'}
             </p>
             <p className="font-mono text-xs text-muted-foreground">{question.explanation}</p>

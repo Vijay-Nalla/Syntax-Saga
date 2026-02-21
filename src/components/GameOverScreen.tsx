@@ -66,7 +66,7 @@ export default function GameOverScreen({ player, onRestart, type, onNextLevel, o
               <button
                 onClick={onNextLevel}
                 className="font-pixel text-[10px] px-8 py-3 border-2 border-primary text-primary
-                  hover:bg-primary hover:text-primary-foreground transition-all box-glow-green"
+                  hover:bg-primary hover:text-primary-foreground transition-all box-glow-primary"
               >
                 NEXT LEVEL
               </button>

@@ -128,7 +128,7 @@ export default function PauseMenu({ onResume, onMainMenu, onChangeLanguage, onVi
           <div className="flex flex-col gap-3">
             <button onClick={onResume}
               className="font-pixel text-[10px] w-full px-8 py-4 border-2 border-primary text-primary
-                hover:bg-primary hover:text-primary-foreground transition-all box-glow-green">
+                hover:bg-primary hover:text-primary-foreground transition-all box-glow-primary">
               ▶ RESUME GAME
             </button>
             <button onClick={() => setShowLanguages(true)}

@@ -45,7 +45,7 @@ export default function PlayerNameEntry({ onSubmit, onBack }: PlayerNameEntryPro
         <button
           onClick={handleSubmit}
           className="w-full font-pixel text-[10px] px-8 py-4 border-2 border-primary text-primary
-            hover:bg-primary hover:text-primary-foreground transition-all box-glow-green mt-4"
+            hover:bg-primary hover:text-primary-foreground transition-all box-glow-primary mt-4"
         >
           JACK IN
         </button>
