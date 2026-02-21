@@ -46,7 +46,7 @@ export default function CodingChallenge({ question, onAnswer, playerCoins, onUse
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-2xl mx-4 border-2 border-primary rounded-lg bg-card p-6 box-glow-green"
+      <div className="relative z-10 w-full max-w-2xl mx-4 border-2 border-primary rounded-lg bg-card p-6 box-glow-primary"
         style={{ animation: 'fadeInUp 0.3s ease-out' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
