@@ -30,8 +30,8 @@ export function renderFrame(
   ctx.fillStyle = isUnderground ? '#0a0800' : '#080c14';
   ctx.fillRect(0, 0, VIEWPORT_W, CANVAS_H);
 
-  // Grid background
-  const gridColor = isUnderground ? 'rgba(180, 120, 0, 0.05)' : 'rgba(0, 255, 128, 0.05)';
+  // Grid background - blue tint
+  const gridColor = isUnderground ? 'rgba(180, 120, 0, 0.05)' : 'rgba(100, 150, 255, 0.05)';
   ctx.strokeStyle = gridColor;
   ctx.lineWidth = 1;
   for (let x = -cam % 60; x < VIEWPORT_W; x += 60) {
@@ -42,8 +42,8 @@ export function renderFrame(
   }
 
   // Platforms with depth shadow and edge glow
-  const platColor = isUnderground ? '#1a1200' : '#0d2030';
-  const platGlow = isUnderground ? '#bb8800' : '#00ff80';
+  const platColor = isUnderground ? '#1a1200' : '#101830';
+  const platGlow = isUnderground ? '#bb8800' : '#6090ff';
   for (const plat of platforms) {
     const px = plat.x - cam;
     if (px + plat.width < -50 || px > VIEWPORT_W + 50) continue;
@@ -56,7 +56,7 @@ export function renderFrame(
     }
 
     // Platform body
-    ctx.fillStyle = isGround ? (isUnderground ? '#0d0800' : '#0a1520') : platColor;
+    ctx.fillStyle = isGround ? (isUnderground ? '#0d0800' : '#0a1225') : platColor;
     ctx.fillRect(px, plat.y, plat.width, plat.height);
 
     // Border
@@ -79,35 +79,35 @@ export function renderFrame(
     }
   }
 
-  // Pipes
+  // Pipes - blue-red gradient style
   for (const pipe of pipes) {
     const px = pipe.x - cam;
     if (px < -60 || px > VIEWPORT_W + 60) continue;
     ctx.save();
     // Pipe body
-    ctx.fillStyle = '#006622';
+    ctx.fillStyle = '#1a2266';
     ctx.fillRect(px - 20, pipe.y, 40, 50);
     // Pipe rim
-    ctx.fillStyle = '#00aa44';
+    ctx.fillStyle = '#4466cc';
     ctx.fillRect(px - 25, pipe.y, 50, 12);
-    ctx.strokeStyle = '#00ff66';
+    ctx.strokeStyle = '#6090ff';
     ctx.lineWidth = 2;
     ctx.strokeRect(px - 25, pipe.y, 50, 12);
     // Glow
-    ctx.shadowColor = '#00ff66';
+    ctx.shadowColor = '#6090ff';
     ctx.shadowBlur = 10;
-    ctx.fillStyle = '#00ff66';
+    ctx.fillStyle = '#6090ff';
     ctx.fillRect(px - 5, pipe.y + 15, 10, 20);
     ctx.shadowBlur = 0;
     // Prompt
     if (!pipe.isReturn && Math.abs(p.x + p.width / 2 - pipe.x) < 40 && Math.abs(p.y + p.height - pipe.y) < 60) {
-      ctx.fillStyle = '#00ff66';
+      ctx.fillStyle = '#6090ff';
       ctx.font = '8px "Press Start 2P"';
       ctx.textAlign = 'center';
       ctx.fillText('AUTO ENTER', px, pipe.y - 10);
     }
     if (pipe.isReturn && Math.abs(p.x + p.width / 2 - pipe.x) < 40 && Math.abs(p.y + p.height - pipe.y) < 60) {
-      ctx.fillStyle = '#00ff66';
+      ctx.fillStyle = '#6090ff';
       ctx.font = '8px "Press Start 2P"';
       ctx.textAlign = 'center';
       ctx.fillText('AUTO EXIT', px, pipe.y - 10);
@@ -147,7 +147,6 @@ export function renderFrame(
     ctx.fillStyle = config.color;
 
     if (enemy.type === 'debug-ghost') {
-      // Ghost shape - semi-transparent
       ctx.globalAlpha = 0.6 + Math.sin(Date.now() / 200) * 0.3;
       ctx.beginPath();
       ctx.arc(ex, enemy.y - 6, 14, Math.PI, 0);
@@ -160,7 +159,6 @@ export function renderFrame(
       ctx.fill();
       ctx.globalAlpha = 1;
     } else if (enemy.type === 'virus-bug') {
-      // Spiky virus
       const spikes = 8;
       ctx.beginPath();
       for (let i = 0; i < spikes * 2; i++) {
@@ -171,7 +169,6 @@ export function renderFrame(
       ctx.closePath();
       ctx.fill();
     } else {
-      // Default square enemies
       ctx.fillRect(ex - 12, enemy.y - 12, 24, 24);
     }
 
@@ -188,19 +185,19 @@ export function renderFrame(
     ctx.restore();
   }
 
-  // Terminals
+  // Terminals - blue accent
   for (const terminal of terminals) {
     const tx = terminal.x - cam;
     if (tx < -30 || tx > VIEWPORT_W + 30) continue;
     ctx.save();
-    ctx.shadowColor = terminal.used ? '#333' : '#00ffcc';
+    ctx.shadowColor = terminal.used ? '#333' : '#6090ff';
     ctx.shadowBlur = terminal.used ? 0 : 15;
-    ctx.fillStyle = terminal.used ? '#1a1a2e' : '#0a2a2a';
+    ctx.fillStyle = terminal.used ? '#1a1a2e' : '#0a1a3a';
     ctx.fillRect(tx - 15, terminal.y, 30, 40);
-    ctx.strokeStyle = terminal.used ? '#333' : '#00ffcc';
+    ctx.strokeStyle = terminal.used ? '#333' : '#6090ff';
     ctx.lineWidth = 2;
     ctx.strokeRect(tx - 15, terminal.y, 30, 40);
-    ctx.fillStyle = terminal.used ? '#111' : '#00ffcc';
+    ctx.fillStyle = terminal.used ? '#111' : '#6090ff';
     ctx.fillRect(tx - 10, terminal.y + 5, 20, 15);
     if (!terminal.used) {
       ctx.fillStyle = '#000';
@@ -209,7 +206,7 @@ export function renderFrame(
       ctx.fillText('>', tx, terminal.y + 15);
     }
     if (!terminal.used && Math.abs(p.x + p.width / 2 - terminal.x) < 40 && Math.abs(p.y + p.height - terminal.y - 40) < 40) {
-      ctx.fillStyle = '#00ffcc';
+      ctx.fillStyle = '#6090ff';
       ctx.font = '8px "Press Start 2P"';
       ctx.textAlign = 'center';
       ctx.fillText('[E] HACK', tx, terminal.y - 10);
@@ -217,37 +214,41 @@ export function renderFrame(
     ctx.restore();
   }
 
-  // Player
+  // Player - blue-red gradient character
   const ppx = p.x - cam;
   ctx.save();
-  ctx.shadowColor = '#00ff80';
+  ctx.shadowColor = '#6090ff';
   ctx.shadowBlur = 12;
-  ctx.fillStyle = '#00ff80';
+  // Body - blue
+  ctx.fillStyle = '#5080dd';
   ctx.fillRect(ppx + 4, p.y + 8, PLAYER_W - 8, PLAYER_H - 16);
-  ctx.fillStyle = '#00cc66';
+  // Head - darker blue
+  ctx.fillStyle = '#3060bb';
   ctx.fillRect(ppx + 6, p.y, PLAYER_W - 12, 14);
-  ctx.fillStyle = '#00ffcc';
+  // Visor - red accent
+  ctx.fillStyle = '#dd4466';
   const visorX = p.facing === 'right' ? ppx + 14 : ppx + 6;
   ctx.fillRect(visorX, p.y + 4, 12, 5);
+  // Legs
   const legAnim = Math.abs(p.vx) > 0 ? Math.sin(Date.now() / 80) * 4 : 0;
-  ctx.fillStyle = '#008844';
+  ctx.fillStyle = '#2a4488';
   ctx.fillRect(ppx + 6, p.y + PLAYER_H - 10 + legAnim, 8, 10);
   ctx.fillRect(ppx + PLAYER_W - 14, p.y + PLAYER_H - 10 - legAnim, 8, 10);
   ctx.restore();
 
-  // End gate
+  // End gate - blue-red
   const CANVAS_W = 2400;
   const gateX = CANVAS_W - 60 - cam;
   if (gateX > -50 && gateX < VIEWPORT_W + 50) {
     ctx.save();
-    ctx.shadowColor = '#00ffcc';
+    ctx.shadowColor = '#6090ff';
     ctx.shadowBlur = 20;
-    ctx.strokeStyle = '#00ffcc';
+    ctx.strokeStyle = '#6090ff';
     ctx.lineWidth = 3;
     ctx.strokeRect(gateX, CANVAS_H - 160, 40, 60);
-    ctx.fillStyle = 'rgba(0,255,204,0.1)';
+    ctx.fillStyle = 'rgba(96,144,255,0.1)';
     ctx.fillRect(gateX, CANVAS_H - 160, 40, 60);
-    ctx.fillStyle = '#00ffcc';
+    ctx.fillStyle = '#6090ff';
     ctx.font = '7px "Press Start 2P"';
     ctx.textAlign = 'center';
     ctx.fillText('EXIT', gateX + 20, CANVAS_H - 170);
