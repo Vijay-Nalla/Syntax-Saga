@@ -15,9 +15,9 @@ export default function GameHUD({ player, levelNum, levelTopic, isUnderground }:
 
   return (
     <div className="absolute top-0 left-0 right-0 z-30 pointer-events-none">
-      <div className="flex items-start justify-between p-3 gap-4">
+      <div className="flex items-start justify-between p-2 sm:p-3 gap-2 sm:gap-4">
         {/* Health + Player name */}
-        <div className="flex flex-col gap-1 min-w-[180px] ml-20">
+        <div className="flex flex-col gap-1 min-w-[100px] sm:min-w-[180px] ml-1 sm:ml-20">
           <span className="font-pixel text-[7px] text-foreground truncate max-w-[120px]">
             {player.name}
           </span>
