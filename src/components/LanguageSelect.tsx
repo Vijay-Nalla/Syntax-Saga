@@ -9,12 +9,12 @@ export default function LanguageSelect({ onSelect }: LanguageSelectProps) {
     <div className="fixed inset-0 bg-background flex flex-col items-center justify-center overflow-hidden">
       <div className="absolute inset-0 scanlines pointer-events-none z-10" />
 
-      <div className="relative z-20 text-center px-4 max-w-5xl w-full">
-        <h2 className="font-display text-3xl md:text-4xl font-bold text-primary text-glow-primary mb-3">
-          LANGUAGE SELECTION PORTAL
+      <div className="relative z-20 text-center px-3 sm:px-4 max-w-5xl w-full">
+        <h2 className="font-display text-xl sm:text-3xl md:text-4xl font-bold text-primary text-glow-primary mb-2 sm:mb-3">
+          LANGUAGE SELECTION
         </h2>
-        <p className="font-mono text-sm text-muted-foreground mb-12">
-          Choose your programming realm to begin the adventure
+        <p className="font-mono text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-12">
+          Choose your programming realm
         </p>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
