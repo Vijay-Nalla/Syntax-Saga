@@ -18,12 +18,12 @@ export default function GameHUD({ player, levelNum, levelTopic, isUnderground }:
       <div className="flex items-start justify-between p-2 sm:p-3 gap-2 sm:gap-4">
         {/* Health + Player name */}
         <div className="flex flex-col gap-1 min-w-[100px] sm:min-w-[180px] ml-1 sm:ml-20">
-          <span className="font-pixel text-[7px] text-foreground truncate max-w-[120px]">
+          <span className="font-pixel text-[6px] sm:text-[7px] text-foreground truncate max-w-[80px] sm:max-w-[120px]">
             {player.name}
           </span>
-          <div className="flex items-center gap-2">
-            <span className="font-pixel text-[8px] text-destructive">HP</span>
-            <div className="flex-1 h-3 bg-muted rounded-sm border border-border overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <span className="font-pixel text-[7px] sm:text-[8px] text-destructive">HP</span>
+            <div className="flex-1 h-2 sm:h-3 bg-muted rounded-sm border border-border overflow-hidden">
               <div
                 className="h-full transition-all duration-300 rounded-sm"
                 style={{ width: `${healthPercent}%`, backgroundColor: healthColor, boxShadow: `0 0 8px ${healthColor}` }}

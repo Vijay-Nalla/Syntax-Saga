@@ -102,8 +102,11 @@ export default function TitleScreen({ onStart, onLeaderboard }: TitleScreenProps
           </div>
         )}
 
-        <p className="font-mono text-xs text-muted-foreground mt-6 opacity-60">
+        <p className="font-mono text-[9px] sm:text-xs text-muted-foreground mt-4 sm:mt-6 opacity-60 hidden sm:block">
           Arrow Keys / WASD to move • Space to jump • E to interact • ↓ to enter pipes
+        </p>
+        <p className="font-mono text-[9px] text-muted-foreground mt-4 opacity-60 sm:hidden">
+          Touch controls on screen
         </p>
       </div>
     </div>

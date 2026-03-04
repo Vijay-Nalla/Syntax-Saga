@@ -564,6 +564,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     resumeGame,
     returnToMenu,
     changeLanguage,
+    keysRef,
     getPlayTime: () => Math.floor((Date.now() - startTimeRef.current) / 1000),
     setGameState: (screen: GameState['screen']) => {
       screenRef.current = screen;

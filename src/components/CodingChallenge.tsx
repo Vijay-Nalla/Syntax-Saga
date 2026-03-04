@@ -43,10 +43,10 @@ export default function CodingChallenge({ question, onAnswer, playerCoins, onUse
     question.type === 'debug' ? 'DEBUG THE CODE' : 'PREDICT OUTPUT';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm overflow-y-auto py-4">
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-2xl mx-4 border-2 border-primary rounded-lg bg-card p-6 box-glow-primary"
+      <div className="relative z-10 w-full max-w-2xl mx-3 sm:mx-4 border-2 border-primary rounded-lg bg-card p-4 sm:p-6 box-glow-primary max-h-[90vh] overflow-y-auto"
         style={{ animation: 'fadeInUp 0.3s ease-out' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">

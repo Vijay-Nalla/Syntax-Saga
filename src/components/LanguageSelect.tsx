@@ -22,7 +22,7 @@ export default function LanguageSelect({ onSelect }: LanguageSelectProps) {
             <button
               key={lang.id}
               onClick={() => onSelect(lang.id)}
-              className="group relative flex flex-col items-center justify-center p-6 md:p-8
+              className="group relative flex flex-col items-center justify-center p-4 sm:p-6 md:p-8
                 border-2 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95"
               style={{
                 borderColor: lang.color,
