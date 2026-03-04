@@ -67,7 +67,7 @@ export default function TitleScreen({ onStart, onLeaderboard }: TitleScreenProps
         >
           SYNTAX SAGA
         </h1>
-        <p className="font-pixel text-xs md:text-sm text-neon-cyan text-glow-cyan mb-12 tracking-widest">
+        <p className="font-pixel text-[8px] sm:text-xs md:text-sm text-neon-cyan text-glow-cyan mb-8 sm:mb-12 tracking-widest">
           THE MULTIVERSE CODING ADVENTURE
         </p>
 
