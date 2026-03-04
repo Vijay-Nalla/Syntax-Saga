@@ -11,12 +11,13 @@ import GameOverScreen from '@/components/GameOverScreen';
 import PauseMenu from '@/components/PauseMenu';
 import PlayerNameEntry from '@/components/PlayerNameEntry';
 import LeaderboardScreen from '@/components/LeaderboardScreen';
+import TouchControls from '@/components/TouchControls';
 
 const Index = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const {
     gameState, startGame, answerQuestion, useHint, nextLevel, replayLevel,
-    pauseGame, resumeGame, returnToMenu, changeLanguage, setGameState, getPlayTime,
+    pauseGame, resumeGame, returnToMenu, changeLanguage, setGameState, getPlayTime, keysRef,
   } = useGameEngine(canvasRef);
 
   const [playerNameLocal, setPlayerNameLocal] = useState(getPlayerName() || '');
@@ -58,34 +59,38 @@ const Index = () => {
 
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
-      {/* Game Canvas */}
-      <div className="flex items-center justify-center w-full h-full">
+      {/* Game Canvas — responsive */}
+      <div className="flex items-center justify-center w-full h-full p-2 sm:p-4">
         <canvas
           ref={canvasRef}
           width={960}
           height={600}
           className="border border-border rounded-lg"
           style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
+            width: '100%',
+            maxWidth: '960px',
+            height: 'auto',
+            aspectRatio: '960 / 600',
             display: isInGame ? 'block' : 'none',
             imageRendering: 'pixelated',
           }}
         />
       </div>
 
-      {/* HUD + Menu Button (top-right) */}
+      {/* HUD + Menu Button */}
       {isInGame && (
         <>
           <GameHUD player={gameState.player} levelNum={gameState.currentLevel} levelTopic={levelData.topic} isUnderground={gameState.isUnderground} />
           <button
             onClick={pauseGame}
-            className="absolute top-3 right-3 z-40 font-pixel text-[9px] px-3 py-2
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 z-40 font-pixel text-[8px] sm:text-[9px] px-2 sm:px-3 py-1.5 sm:py-2
               border border-border text-muted-foreground bg-card/80 backdrop-blur-sm rounded
               hover:border-primary hover:text-primary transition-all pointer-events-auto"
           >
-            ☰ MENU
+            ☰
           </button>
+          {/* Touch controls */}
+          <TouchControls keysRef={keysRef} onPause={pauseGame} />
         </>
       )}
 

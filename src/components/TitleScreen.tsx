@@ -54,9 +54,9 @@ export default function TitleScreen({ onStart, onLeaderboard }: TitleScreenProps
         ))}
       </div>
 
-      <div className="relative z-20 text-center px-8 max-w-3xl">
+      <div className="relative z-20 text-center px-4 sm:px-8 max-w-3xl">
         <h1
-          className="font-display text-5xl md:text-7xl font-black mb-2 glitch-text"
+          className="font-display text-3xl sm:text-5xl md:text-7xl font-black mb-2 glitch-text"
           style={{
             background: 'linear-gradient(135deg, hsl(200, 90%, 70%), hsl(350, 80%, 65%))',
             WebkitBackgroundClip: 'text',
@@ -67,7 +67,7 @@ export default function TitleScreen({ onStart, onLeaderboard }: TitleScreenProps
         >
           SYNTAX SAGA
         </h1>
-        <p className="font-pixel text-xs md:text-sm text-neon-cyan text-glow-cyan mb-12 tracking-widest">
+        <p className="font-pixel text-[8px] sm:text-xs md:text-sm text-neon-cyan text-glow-cyan mb-8 sm:mb-12 tracking-widest">
           THE MULTIVERSE CODING ADVENTURE
         </p>
 
@@ -102,8 +102,11 @@ export default function TitleScreen({ onStart, onLeaderboard }: TitleScreenProps
           </div>
         )}
 
-        <p className="font-mono text-xs text-muted-foreground mt-6 opacity-60">
+        <p className="font-mono text-[9px] sm:text-xs text-muted-foreground mt-4 sm:mt-6 opacity-60 hidden sm:block">
           Arrow Keys / WASD to move • Space to jump • E to interact • ↓ to enter pipes
+        </p>
+        <p className="font-mono text-[9px] text-muted-foreground mt-4 opacity-60 sm:hidden">
+          Touch controls on screen
         </p>
       </div>
     </div>
