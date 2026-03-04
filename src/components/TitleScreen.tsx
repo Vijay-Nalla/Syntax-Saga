@@ -54,9 +54,9 @@ export default function TitleScreen({ onStart, onLeaderboard }: TitleScreenProps
         ))}
       </div>
 
-      <div className="relative z-20 text-center px-8 max-w-3xl">
+      <div className="relative z-20 text-center px-4 sm:px-8 max-w-3xl">
         <h1
-          className="font-display text-5xl md:text-7xl font-black mb-2 glitch-text"
+          className="font-display text-3xl sm:text-5xl md:text-7xl font-black mb-2 glitch-text"
           style={{
             background: 'linear-gradient(135deg, hsl(200, 90%, 70%), hsl(350, 80%, 65%))',
             WebkitBackgroundClip: 'text',
