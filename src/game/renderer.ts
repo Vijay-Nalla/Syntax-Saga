@@ -81,12 +81,16 @@ export function renderFrame(
 
   // Pipes - blue-red gradient style
   for (const pipe of pipes) {
+    // Only draw pipes relevant to current layer
+    if (isUnderground && !pipe.isReturn) continue;
+    if (!isUnderground && pipe.isReturn) continue;
     const px = pipe.x - cam;
     if (px < -60 || px > VIEWPORT_W + 60) continue;
     ctx.save();
     // Pipe body
     ctx.fillStyle = '#1a2266';
-    ctx.fillRect(px - 20, pipe.y, 40, 50);
+    // Slightly extend into ground for visual anchoring
+    ctx.fillRect(px - 20, pipe.y, 40, 60);
     // Pipe rim
     ctx.fillStyle = '#4466cc';
     ctx.fillRect(px - 25, pipe.y, 50, 12);
@@ -185,33 +189,35 @@ export function renderFrame(
     ctx.restore();
   }
 
-  // Terminals - blue accent
-  for (const terminal of terminals) {
-    const tx = terminal.x - cam;
-    if (tx < -30 || tx > VIEWPORT_W + 30) continue;
-    ctx.save();
-    ctx.shadowColor = terminal.used ? '#333' : '#6090ff';
-    ctx.shadowBlur = terminal.used ? 0 : 15;
-    ctx.fillStyle = terminal.used ? '#1a1a2e' : '#0a1a3a';
-    ctx.fillRect(tx - 15, terminal.y, 30, 40);
-    ctx.strokeStyle = terminal.used ? '#333' : '#6090ff';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(tx - 15, terminal.y, 30, 40);
-    ctx.fillStyle = terminal.used ? '#111' : '#6090ff';
-    ctx.fillRect(tx - 10, terminal.y + 5, 20, 15);
-    if (!terminal.used) {
-      ctx.fillStyle = '#000';
-      ctx.font = '6px "Press Start 2P"';
-      ctx.textAlign = 'center';
-      ctx.fillText('>', tx, terminal.y + 15);
+  // Terminals - blue accent (surface only)
+  if (!isUnderground) {
+    for (const terminal of terminals) {
+      const tx = terminal.x - cam;
+      if (tx < -30 || tx > VIEWPORT_W + 30) continue;
+      ctx.save();
+      ctx.shadowColor = terminal.used ? '#333' : '#6090ff';
+      ctx.shadowBlur = terminal.used ? 0 : 15;
+      ctx.fillStyle = terminal.used ? '#1a1a2e' : '#0a1a3a';
+      ctx.fillRect(tx - 15, terminal.y, 30, 40);
+      ctx.strokeStyle = terminal.used ? '#333' : '#6090ff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(tx - 15, terminal.y, 30, 40);
+      ctx.fillStyle = terminal.used ? '#111' : '#6090ff';
+      ctx.fillRect(tx - 10, terminal.y + 5, 20, 15);
+      if (!terminal.used) {
+        ctx.fillStyle = '#000';
+        ctx.font = '6px "Press Start 2P"';
+        ctx.textAlign = 'center';
+        ctx.fillText('>', tx, terminal.y + 15);
+      }
+      if (!terminal.used && Math.abs(p.x + p.width / 2 - terminal.x) < 40 && Math.abs(p.y + p.height - terminal.y - 40) < 40) {
+        ctx.fillStyle = '#6090ff';
+        ctx.font = '8px "Press Start 2P"';
+        ctx.textAlign = 'center';
+        ctx.fillText('[E] HACK', tx, terminal.y - 10);
+      }
+      ctx.restore();
     }
-    if (!terminal.used && Math.abs(p.x + p.width / 2 - terminal.x) < 40 && Math.abs(p.y + p.height - terminal.y - 40) < 40) {
-      ctx.fillStyle = '#6090ff';
-      ctx.font = '8px "Press Start 2P"';
-      ctx.textAlign = 'center';
-      ctx.fillText('[E] HACK', tx, terminal.y - 10);
-    }
-    ctx.restore();
   }
 
   // Player - blue-red gradient character

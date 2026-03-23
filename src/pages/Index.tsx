@@ -50,6 +50,12 @@ const Index = () => {
     setGameState('leaderboard');
   }, [setGameState]);
 
+  const handleGoogleSuccess = useCallback((name: string) => {
+    setPlayerName(name);
+    setPlayerNameLocal(name);
+    setGameState('language-select');
+  }, [setGameState]);
+
   const handleGoHome = useCallback(() => {
     returnToMenu();
   }, [returnToMenu]);
@@ -95,7 +101,7 @@ const Index = () => {
       )}
 
       {/* Screens */}
-      {gameState.screen === 'title' && <TitleScreen onStart={handleStart} onLeaderboard={handleViewLeaderboard} />}
+      {gameState.screen === 'title' && <TitleScreen onStart={handleStart} onLeaderboard={handleViewLeaderboard} onGoogleSuccess={handleGoogleSuccess} />}
       {gameState.screen === 'name-entry' && <PlayerNameEntry onSubmit={handleNameSubmit} onBack={() => setGameState('title')} />}
       {gameState.screen === 'language-select' && <LanguageSelect onSelect={handleSelectLanguage} />}
       {gameState.screen === 'leaderboard' && <LeaderboardScreen onBack={() => setGameState('title')} />}

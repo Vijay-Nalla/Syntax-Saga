@@ -13,7 +13,7 @@ function loadSettings(): AudioSettings {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (data) return JSON.parse(data);
-  } catch {}
+  } catch (_e) { return { volume: 0.5, muted: false }; }
   return { volume: 0.5, muted: false };
 }
 

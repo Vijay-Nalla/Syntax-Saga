@@ -40,6 +40,11 @@ export interface Platform {
   width: number;
   height: number;
   type: 'normal' | 'moving' | 'breakable';
+  baseX?: number;
+  range?: number;
+  speed?: number;
+  dir?: number;
+  prevX?: number;
 }
 
 export type EnemyType = 'syntax-error' | 'logical-error' | 'runtime-error' | 'debug-ghost' | 'virus-bug';

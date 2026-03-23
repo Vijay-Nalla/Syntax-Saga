@@ -52,13 +52,22 @@ interface SegmentResult {
 
 function makePlatform(x: number, y: number, width: number, cfg: TierCfg, rand: () => number): Platform {
   const isMoving = rand() < cfg.movingChance;
-  return {
+  const baseX = snap(x);
+  const plat: Platform = {
     x: snap(x),
     y,
     width: snap(width),
     height: 20,
     type: isMoving ? 'moving' : 'normal',
   };
+  if (isMoving) {
+    plat.baseX = baseX;
+    plat.range = cfg.movingRange;
+    plat.speed = cfg.movingSpeed;
+    plat.dir = rand() < 0.5 ? -1 : 1;
+    plat.prevX = baseX;
+  }
+  return plat;
 }
 
 function platWidth(cfg: TierCfg, rand: () => number): number {
@@ -184,7 +193,7 @@ function generateLevel(levelNum: number) {
   const cfg = TIER_CONFIG[tier];
 
   // Ground platform
-  const platforms: Platform[] = [
+  let platforms: Platform[] = [
     { x: 0, y: GROUND_Y, width: CANVAS_W, height: 100, type: 'normal' },
   ];
 
@@ -235,19 +244,21 @@ function generateLevel(levelNum: number) {
     });
   }
 
-  // Terminals
-  const terminalCount = 2 + Math.min(Math.floor(levelNum / 3), 3);
+  // Terminals (aligned to question pool: 4 per level)
+  const terminalCount = 4;
   const terminals: TerminalSpawn[] = [];
   for (let i = 0; i < terminalCount; i++) {
     terminals.push({
       x: snap(400 + i * Math.floor(1600 / terminalCount) + rand() * 80),
-      y: GROUND_Y - 60,
+      // Place terminals (question blocks) directly on ground (no floating)
+      // Terminal height ≈ 40px, so top at groundY - 40 aligns bottom with ground
+      y: GROUND_Y - 40,
       questionIndex: i,
     });
   }
 
   // Underground (generate before pipes so we can check for open spots)
-  const undergroundPlatforms = levelNum >= 3 ? generateUndergroundPlatforms(levelNum, rand) : [];
+  let undergroundPlatforms = levelNum >= 3 ? generateUndergroundPlatforms(levelNum, rand) : [];
   const undergroundEnemies = levelNum >= 3 ? generateUndergroundEnemies(levelNum, rand) : [];
 
   // Underground coins
@@ -270,9 +281,22 @@ function generateLevel(levelNum: number) {
     const isOpenSpot = (testX: number, allPlats: Platform[], floorY: number): boolean => {
       for (const plat of allPlats) {
         if (plat.y >= floorY) continue;
-        if (testX > plat.x - 80 && testX < plat.x + plat.width + 80) return false;
+        // widen horizontal clearance around pipe
+        if (testX > plat.x - 120 && testX < plat.x + plat.width + 120) return false;
       }
       return true;
+    };
+    const clearCorridor = (allPlats: Platform[], pipeX: number, floorY: number): Platform[] => {
+      const half = 90; // ensure a clear corridor around pipe
+      const minX = pipeX - half;
+      const maxX = pipeX + half;
+      return allPlats.filter(plat => {
+        // keep ground/floor platforms
+        if (plat.y >= floorY) return true;
+        // remove any platform that overlaps corridor horizontally
+        const overlap = !(plat.x + plat.width < minX || plat.x > maxX);
+        return !overlap;
+      });
     };
 
     let entryX = snap(800);
@@ -282,6 +306,8 @@ function generateLevel(levelNum: number) {
     }
 
     pipes.push({ x: entryX, y: GROUND_Y - 50, targetX: 100, targetY: 550 - 50, isReturn: false });
+    // remove any obstructing platforms above entry pipe
+    platforms = clearCorridor(platforms, entryX, GROUND_Y);
 
     let exitX = snap(entryX + 800);
     if (exitX > CANVAS_W - 200) exitX = snap(CANVAS_W - 300);
@@ -290,6 +316,8 @@ function generateLevel(levelNum: number) {
       if (isOpenSpot(candidate, undergroundPlatforms, 550)) { exitX = candidate; break; }
     }
     pipes.push({ x: exitX, y: 550 - 50, targetX: entryX + 80, targetY: GROUND_Y - 60, isReturn: true });
+    // remove any obstructing platforms above return pipe underground
+    undergroundPlatforms = clearCorridor(undergroundPlatforms, exitX, 550);
   }
 
   return { platforms, coins, enemies, terminals, pipes, undergroundPlatforms, undergroundCoins, undergroundEnemies };

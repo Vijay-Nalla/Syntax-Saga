@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { PlayerState, GameState, Language, Question, Platform, EnemyType, ENEMY_CONFIG, PipeSpawn } from './types';
+import { PlayerState, GameState, Language, Question, Platform, EnemyType, ENEMY_CONFIG, PipeSpawn, EnemySpawn } from './types';
 import { getLevelData } from './levels';
 import { getQuestionsForLevel } from './questions';
 import { renderFrame } from './renderer';
@@ -110,6 +110,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
   const enemiesRef = useRef<Enemy[]>([]);
   const coinsRef = useRef<Coin[]>([]);
   const terminalsRef = useRef<Terminal[]>([]);
+  const surfaceTerminalsRef = useRef<Terminal[]>([]);
   const platformsRef = useRef<Platform[]>([]);
   const pipesRef = useRef<PipeSpawn[]>([]);
   const cameraXRef = useRef(0);
@@ -161,12 +162,13 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     coinsRef.current = data.coins.map(c => ({ ...c, collected: false }));
     enemiesRef.current = data.enemies.map(e => ({ ...e, startX: e.x, dir: 1, alive: true }));
     terminalsRef.current = data.terminals.map(t => ({ ...t, used: false }));
+    surfaceTerminalsRef.current = [...terminalsRef.current];
     pipesRef.current = data.pipes || [];
 
     // Store underground data
     undergroundPlatformsRef.current = data.undergroundPlatforms || [];
     undergroundCoinsRef.current = (data.undergroundCoins || []).map((c: CoinSpawn) => ({ ...c, collected: false }));
-    undergroundEnemiesRef.current = (data.undergroundEnemies || []).map((e: any) => ({ ...e, startX: e.x, dir: 1, alive: true }));
+    undergroundEnemiesRef.current = (data.undergroundEnemies || []).map((e: EnemySpawn) => ({ ...e, startX: e.x, dir: 1, alive: true }));
     // Store surface data for switching back
     surfacePlatformsRef.current = [...platformsRef.current];
     surfaceCoinsRef.current = [...coinsRef.current];
@@ -193,6 +195,9 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     if (pipeTransitioningRef.current) return;
     pipeTransitioningRef.current = true;
     const p = playerRef.current;
+    // Hide terminals while underground
+    surfaceTerminalsRef.current = [...terminalsRef.current];
+    terminalsRef.current = [];
     platformsRef.current = undergroundPlatformsRef.current;
     coinsRef.current = undergroundCoinsRef.current;
     enemiesRef.current = undergroundEnemiesRef.current;
@@ -214,6 +219,8 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     platformsRef.current = surfacePlatformsRef.current;
     coinsRef.current = surfaceCoinsRef.current;
     enemiesRef.current = surfaceEnemiesRef.current;
+    // Restore surface terminals
+    terminalsRef.current = surfaceTerminalsRef.current;
     p.x = pipe.targetX;
     p.y = pipe.targetY;
     p.vx = 0;
@@ -234,10 +241,19 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     startTimeRef.current = Date.now();
     completedLevelsRef.current = [];
     questionTrackerRef.current.resetSession();
-    loadLevel(1, language);
+    let startLevel = 1;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const lvlStr = params.get('level');
+      if (lvlStr) {
+        const lvl = Math.max(1, Math.min(50, parseInt(lvlStr, 10) || 1));
+        startLevel = lvl;
+      }
+    } catch {}
+    loadLevel(startLevel, language);
     screenRef.current = 'playing';
     audioManager.startBGM();
-    setGameState(prev => ({ ...prev, screen: 'playing', player: { ...p }, currentLevel: 1, startTime: Date.now(), isUnderground: false }));
+    setGameState(prev => ({ ...prev, screen: 'playing', player: { ...p }, currentLevel: startLevel, startTime: Date.now(), isUnderground: false }));
   }, [loadLevel]);
 
   // ---- Resume from saved progress ----
@@ -374,6 +390,20 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       const keys = keysRef.current;
       const p = playerRef.current;
 
+      for (const plat of platformsRef.current) {
+        if (plat.type === 'moving' && typeof plat.baseX === 'number' && typeof plat.range === 'number' && typeof plat.speed === 'number' && typeof plat.dir === 'number') {
+          plat.prevX = plat.x;
+          plat.x += plat.speed * plat.dir;
+          if (plat.x > plat.baseX + plat.range) {
+            plat.x = plat.baseX + plat.range;
+            plat.dir *= -1;
+          } else if (plat.x < plat.baseX - plat.range) {
+            plat.x = plat.baseX - plat.range;
+            plat.dir *= -1;
+          }
+        }
+      }
+
       // Skip input during pipe transition
       if (!pipeTransitioningRef.current) {
         // Movement
@@ -415,6 +445,9 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
           p.vy = 0;
           p.onGround = true;
           jumpCountRef.current = 0;
+          if (plat.type === 'moving' && typeof plat.prevX === 'number') {
+            p.x += plat.x - plat.prevX;
+          }
         }
       }
 
@@ -503,18 +536,20 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
         }
       }
 
-      // Terminals
-      for (const terminal of terminalsRef.current) {
-        if (!terminal.used && Math.abs(p.x + p.width / 2 - terminal.x) < 30 && Math.abs(p.y + p.height - terminal.y - 40) < 30) {
-          if (keys.has('e') || keys.has('Enter')) {
-            terminal.used = true;
-            const questions = levelQuestionsRef.current;
-            if (questions.length > 0) {
-              const qIndex = questionTrackerRef.current.next(questions);
-              const q = questions[qIndex % questions.length];
-              if (q) {
-                screenRef.current = 'challenge';
-                setGameState(prev => ({ ...prev, screen: 'challenge', currentQuestion: q, player: { ...p } }));
+      // Terminals (surface only)
+      if (!isUndergroundRef.current) {
+        for (const terminal of terminalsRef.current) {
+          if (!terminal.used && Math.abs(p.x + p.width / 2 - terminal.x) < 30 && Math.abs(p.y + p.height - terminal.y - 40) < 30) {
+            if (keys.has('e') || keys.has('Enter')) {
+              terminal.used = true;
+              const questions = levelQuestionsRef.current;
+              if (questions.length > 0) {
+                const qIndex = questionTrackerRef.current.next(questions);
+                const q = questions[qIndex % questions.length];
+                if (q) {
+                  screenRef.current = 'challenge';
+                  setGameState(prev => ({ ...prev, screen: 'challenge', currentQuestion: q, player: { ...p } }));
+                }
               }
             }
           }
