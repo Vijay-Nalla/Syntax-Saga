@@ -101,7 +101,7 @@ export default function TitleScreen({ onStart, onLeaderboard, onGoogleSuccess }:
             filter: 'drop-shadow(0 0 20px hsla(200, 90%, 70%, 0.5)) drop-shadow(0 0 40px hsla(350, 80%, 65%, 0.3))',
           }}
         >
-          SYNTAX SAGA
+          CODE-VERSE
         </h1>
         <p className="font-pixel text-[8px] sm:text-xs md:text-sm text-neon-cyan text-glow-cyan mb-8 sm:mb-12 tracking-widest">
           THE MULTIVERSE CODING ADVENTURE
