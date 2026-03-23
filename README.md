@@ -1,73 +1,69 @@
-# CODE-VERSE
+# Syntax Saga: The Multiverse Coding Adventure
 
-## Project info
+A retro-style 2D platformer game built with React, TypeScript, and Vite. Learn coding concepts while exploring five different realms and defeating the Bug King!
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Features
 
-## How can I edit this code?
+- **Retro Aesthetic**: Pixel art style with CRT scanlines and matrix rain effects.
+- **Coding Challenges**: Solve language-specific puzzles (JavaScript, Python, C++, etc.) to progress.
+- **Multiple Levels**: Explore diverse environments with unique mechanics.
+- **Leaderboard**: Compete with other players for the high score.
+- **Google Authentication**: Securely sign in to save your progress and compete on the leaderboard.
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, shadcn/ui
+- **State Management**: React Hooks, TanStack Query
+- **Authentication**: Google OAuth 2.0 (@react-oauth/google)
+- **Icons**: Lucide React
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js (v18 or higher)
+- npm or bun
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Vijay-Nalla/code-quest-adventures.git
+   ```
 
-Follow these steps:
+2. Navigate to the project directory:
+   ```bash
+   cd code-quest-adventures
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-# Step 2: Navigate to the project directory.
-cd CODE-VERSE
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+5. Open your browser and navigate to `http://localhost:8080`.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## Configuration
+
+To enable Google Authentication, you need to provide your own Google Client ID in `src/App.tsx`:
+
+```typescript
+const GOOGLE_CLIENT_ID = "YOUR_CLIENT_ID.apps.googleusercontent.com";
 ```
 
-**Edit a file directly in GitHub**
+## Development
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `npm run dev`: Starts the Vite development server.
+- `npm run build`: Builds the project for production.
+- `npm run lint`: Runs ESLint to check for code quality issues.
+- `npm run test`: Runs the test suite using Vitest.
 
-**Use GitHub Codespaces**
+## License
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT License
