@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { audioManager } from '@/game/audioManager';
 
 interface JoystickProps {
   onMove: (x: number, y: number) => void;
@@ -107,6 +108,7 @@ export const Joystick: React.FC<JoystickProps> = ({ onMove, onEnd, label, color 
           boxShadow: isDragging ? `0 0 20px ${color}66` : `0 0 10px ${color}33`
         }}
         onTouchStart={(e) => {
+          audioManager.resumeContext();
           const touch = e.changedTouches[0];
           handleStart(touch.clientX, touch.clientY, touch.identifier);
         }}

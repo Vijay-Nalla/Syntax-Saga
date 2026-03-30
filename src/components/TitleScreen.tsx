@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useToast } from './ui/use-toast';
+import { audioManager } from '@/game/audioManager';
 
 interface TitleScreenProps {
   onStart: () => void;
@@ -15,6 +16,11 @@ export default function TitleScreen({ onStart, onLeaderboard, onGoogleSuccess }:
   const [typedText, setTypedText] = useState('');
   const [ready, setReady] = useState(false);
   const { toast } = useToast();
+
+  const handleStart = () => {
+    audioManager.resumeContext();
+    onStart();
+  };
 
   useEffect(() => {
     const t1 = setTimeout(() => setShowStory(true), 800);
@@ -119,7 +125,7 @@ export default function TitleScreen({ onStart, onLeaderboard, onGoogleSuccess }:
         {ready && (
           <div className="flex flex-col items-center gap-4">
             <button
-              onClick={onStart}
+              onClick={handleStart}
               className="font-pixel text-sm px-10 py-4 border-2 border-primary text-primary bg-transparent
                 hover:bg-primary hover:text-primary-foreground transition-all duration-300
                 box-glow-primary hover:scale-105 active:scale-95"

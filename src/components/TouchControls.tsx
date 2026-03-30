@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Joystick } from './Joystick';
 import { PlayerState, ControlMode } from '@/game/types';
+import { audioManager } from '@/game/audioManager';
 
 interface TouchControlsProps {
   keysRef: React.MutableRefObject<Set<string>>;
@@ -81,6 +82,7 @@ export default function TouchControls({
   if (!isTouch) return null;
 
   const handlePress = (key: string) => {
+    audioManager.resumeContext();
     keysRef.current.add(key);
   };
 

@@ -33,14 +33,33 @@ class AudioManager {
     this.settings = loadSettings();
   }
 
+  // --- Mobile compatibility: Resume AudioContext on user interaction ---
+  resumeContext() {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().then(() => {
+        console.log('AudioContext resumed successfully');
+      }).catch(err => {
+        console.error('Failed to resume AudioContext:', err);
+      });
+    } else if (!this.ctx) {
+      this.ensureContext();
+    }
+  }
+
   private ensureContext() {
     if (!this.ctx) {
-      this.ctx = new AudioContext();
-      this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = this.settings.muted ? 0 : this.settings.volume;
-      this.masterGain.connect(this.ctx.destination);
+      // Create context using a cross-browser approach
+      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        this.ctx = new AudioContextClass();
+        this.masterGain = this.ctx!.createGain();
+        this.masterGain.gain.value = this.settings.muted ? 0 : this.settings.volume;
+        this.masterGain.connect(this.ctx!.destination);
+      }
     }
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
   }
 
   private playTone(freq: number, duration: number, type: OscillatorType = 'square', vol = 0.3) {
