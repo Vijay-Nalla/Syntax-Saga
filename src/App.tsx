@@ -9,8 +9,8 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// In a real app, this would come from an environment variable
-const GOOGLE_CLIENT_ID = "480073934631-r8lspu9liq9imskjff502qcrkcrpe9q8.apps.googleusercontent.com";
+// Use environment variable for Google Client ID
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "480073934631-r8lspu9liq9imskjff502qcrkcrpe9q8.apps.googleusercontent.com";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
