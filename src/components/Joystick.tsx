@@ -8,13 +8,15 @@ interface JoystickProps {
 export const Joystick: React.FC<JoystickProps> = ({ onMove, onEnd }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const touchIdRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const joystickSize = 100; // Total diameter
   const handleSize = 50;    // Inner circle diameter
   const maxDistance = joystickSize / 2;
 
-  const handleStart = (clientX: number, clientY: number) => {
+  const handleStart = (clientX: number, clientY: number, identifier: number) => {
     setIsDragging(true);
+    touchIdRef.current = identifier;
   };
 
   const handleMove = useCallback((clientX: number, clientY: number) => {
@@ -42,38 +44,60 @@ export const Joystick: React.FC<JoystickProps> = ({ onMove, onEnd }) => {
 
   const handleEnd = useCallback(() => {
     setIsDragging(false);
+    touchIdRef.current = null;
     setPosition({ x: 0, y: 0 });
     onEnd();
   }, [onEnd]);
 
   useEffect(() => {
     const onTouchMove = (e: TouchEvent) => {
-      if (isDragging) {
-        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      if (isDragging && touchIdRef.current !== null) {
+        // Find the specific touch that started the joystick movement
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === touchIdRef.current) {
+            handleMove(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+            break;
+          }
+        }
       }
     };
-    const onTouchEnd = () => handleEnd();
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (isDragging && touchIdRef.current !== null) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === touchIdRef.current) {
+            handleEnd();
+            break;
+          }
+        }
+      }
+    };
 
     if (isDragging) {
       window.addEventListener('touchmove', onTouchMove, { passive: false });
       window.addEventListener('touchend', onTouchEnd);
+      window.addEventListener('touchcancel', onTouchEnd);
     }
 
     return () => {
       window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
     };
   }, [isDragging, handleMove, handleEnd]);
 
   return (
     <div 
       ref={containerRef}
-      className="relative rounded-full bg-card/30 backdrop-blur-md border-2 border-primary/40 flex items-center justify-center touch-none pointer-events-auto"
-      style={{ width: joystickSize, height: joystickSize }}
-      onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY)}
+      className="relative rounded-full bg-card/30 backdrop-blur-md border-2 border-primary/40 flex items-center justify-center touch-none pointer-events-auto select-none"
+      style={{ width: joystickSize, height: joystickSize, touchAction: 'none' }}
+      onTouchStart={(e) => {
+        const touch = e.changedTouches[0];
+        handleStart(touch.clientX, touch.clientY, touch.identifier);
+      }}
     >
       <div 
-        className="absolute rounded-full bg-primary/60 border-2 border-primary shadow-[0_0_15px_rgba(var(--primary),0.5)] transition-transform duration-75"
+        className="absolute rounded-full bg-primary/60 border-2 border-primary shadow-[0_0_15px_rgba(var(--primary),0.5)] transition-transform duration-75 pointer-events-none"
         style={{ 
           width: handleSize, 
           height: handleSize,
