@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { Joystick } from './Joystick';
 
 interface TouchControlsProps {
   keysRef: React.MutableRefObject<Set<string>>;
@@ -12,6 +13,33 @@ export default function TouchControls({ keysRef, onPause }: TouchControlsProps) 
     setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }, []);
 
+  const handleJoystickMove = useCallback((x: number, y: number) => {
+    // Left/Right
+    if (x < -0.3) {
+      keysRef.current.add('ArrowLeft');
+      keysRef.current.delete('ArrowRight');
+    } else if (x > 0.3) {
+      keysRef.current.add('ArrowRight');
+      keysRef.current.delete('ArrowLeft');
+    } else {
+      keysRef.current.delete('ArrowLeft');
+      keysRef.current.delete('ArrowRight');
+    }
+
+    // Down/Crouch
+    if (y > 0.5) {
+      keysRef.current.add('ArrowDown');
+    } else {
+      keysRef.current.delete('ArrowDown');
+    }
+  }, [keysRef]);
+
+  const handleJoystickEnd = useCallback(() => {
+    keysRef.current.delete('ArrowLeft');
+    keysRef.current.delete('ArrowRight');
+    keysRef.current.delete('ArrowDown');
+  }, [keysRef]);
+
   if (!isTouch) return null;
 
   const press = (key: string) => keysRef.current.add(key);
@@ -24,46 +52,39 @@ export default function TouchControls({ keysRef, onPause }: TouchControlsProps) 
   });
 
   return (
-    <div className="fixed inset-0 z-30 pointer-events-none select-none" style={{ touchAction: 'none' }}>
-      {/* D-Pad — bottom left */}
-      <div className="absolute bottom-6 left-4 pointer-events-auto flex items-center gap-2">
-        <button
-          {...touchProps('ArrowLeft')}
-          className="w-14 h-14 rounded-full border-2 border-primary/60 bg-card/40 backdrop-blur-sm
-            flex items-center justify-center text-primary text-xl active:bg-primary/30 active:scale-95 transition-all"
-        >
-          ◀
-        </button>
-        <button
-          {...touchProps('ArrowDown')}
-          className="w-12 h-12 rounded-full border-2 border-secondary/60 bg-card/40 backdrop-blur-sm
-            flex items-center justify-center text-secondary text-lg active:bg-secondary/30 active:scale-95 transition-all"
-        >
-          ▼
-        </button>
-        <button
-          {...touchProps('ArrowRight')}
-          className="w-14 h-14 rounded-full border-2 border-primary/60 bg-card/40 backdrop-blur-sm
-            flex items-center justify-center text-primary text-xl active:bg-primary/30 active:scale-95 transition-all"
-        >
-          ▶
-        </button>
+    <div className="fixed inset-0 z-30 pointer-events-none select-none overflow-hidden" style={{ touchAction: 'none' }}>
+      {/* Joystick — bottom left */}
+      <div className="absolute bottom-10 left-10 pointer-events-auto">
+        <Joystick onMove={handleJoystickMove} onEnd={handleJoystickEnd} />
       </div>
 
       {/* Action buttons — bottom right */}
-      <div className="absolute bottom-6 right-4 pointer-events-auto flex items-end gap-3">
+      <div className="absolute bottom-10 right-10 pointer-events-auto flex items-end gap-6">
+        {/* Down/Bend Button (as alternative to Joystick down) */}
+        <button
+          {...touchProps('ArrowDown')}
+          className="w-16 h-16 rounded-full border-2 border-secondary/60 bg-card/40 backdrop-blur-sm
+            flex items-center justify-center font-pixel text-[10px] text-secondary active:bg-secondary/30 active:scale-95 transition-all
+            shadow-[0_0_15px_hsla(var(--secondary)/0.3)]"
+        >
+          BEND
+        </button>
+
+        {/* E/Interact Button */}
         <button
           {...touchProps('e')}
-          className="w-12 h-12 rounded-full border-2 border-accent/60 bg-card/40 backdrop-blur-sm
+          className="w-14 h-14 rounded-full border-2 border-accent/60 bg-card/40 backdrop-blur-sm
             flex items-center justify-center font-pixel text-[9px] text-accent active:bg-accent/30 active:scale-95 transition-all"
         >
           ACT
         </button>
+
+        {/* Jump Button */}
         <button
           {...touchProps(' ')}
-          className="w-16 h-16 rounded-full border-2 border-primary/80 bg-card/40 backdrop-blur-sm
-            flex items-center justify-center font-pixel text-[10px] text-primary active:bg-primary/30 active:scale-95 transition-all
-            shadow-[0_0_15px_hsla(var(--primary)/0.3)]"
+          className="w-20 h-20 rounded-full border-2 border-primary/80 bg-card/40 backdrop-blur-sm
+            flex items-center justify-center font-pixel text-[12px] text-primary active:bg-primary/30 active:scale-95 transition-all
+            shadow-[0_0_20px_hsla(var(--primary)/0.4)]"
         >
           JUMP
         </button>
