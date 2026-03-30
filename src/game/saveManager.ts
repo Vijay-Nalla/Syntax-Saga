@@ -1,7 +1,7 @@
 // ============= Save Manager =============
 // Centralizes all localStorage persistence for game progress
 
-import { Language } from './types';
+import { Language, ControlMode } from './types';
 
 const PROGRESS_KEY = 'syntax-saga-progress';
 
@@ -13,6 +13,7 @@ export interface SavedProgress {
   currentLevel: number;
   completedLevels: number[];
   bestScore: number;
+  controlMode?: ControlMode;
 }
 
 export function saveProgress(data: SavedProgress) {

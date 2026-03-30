@@ -1,4 +1,4 @@
-import { Language, LANGUAGES } from '@/game/types';
+import { Language, LANGUAGES, ControlMode } from '@/game/types';
 import { audioManager } from '@/game/audioManager';
 import { useState } from 'react';
 
@@ -8,9 +8,19 @@ interface PauseMenuProps {
   onChangeLanguage: (lang: Language) => void;
   onViewLeaderboard: () => void;
   currentLanguage: Language;
+  controlMode: ControlMode;
+  onControlModeChange: (mode: ControlMode) => void;
 }
 
-export default function PauseMenu({ onResume, onMainMenu, onChangeLanguage, onViewLeaderboard, currentLanguage }: PauseMenuProps) {
+export default function PauseMenu({ 
+  onResume, 
+  onMainMenu, 
+  onChangeLanguage, 
+  onViewLeaderboard, 
+  currentLanguage,
+  controlMode,
+  onControlModeChange
+}: PauseMenuProps) {
   const [showLanguages, setShowLanguages] = useState(false);
   const [showConfirmMenu, setShowConfirmMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -64,6 +74,32 @@ export default function PauseMenu({ onResume, onMainMenu, onChangeLanguage, onVi
         {showSettings && (
           <div className="mb-6 border-2 border-secondary rounded-lg p-4 bg-secondary/5">
             <p className="font-pixel text-[9px] text-secondary mb-4 text-center">⚙ SETTINGS</p>
+            
+            {/* Control Mode Toggle */}
+            <div className="mb-6 pb-4 border-b border-secondary/20">
+              <p className="font-mono text-[10px] text-muted-foreground mb-3 uppercase tracking-wider">Action Controls</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => onControlModeChange('joystick')}
+                  className={`font-pixel text-[8px] py-2 border-2 rounded transition-all
+                    ${controlMode === 'joystick' 
+                      ? 'border-primary text-primary bg-primary/10 shadow-[0_0_10px_rgba(var(--primary),0.3)]' 
+                      : 'border-border text-muted-foreground hover:border-foreground'}`}
+                >
+                  JOYSTICK
+                </button>
+                <button
+                  onClick={() => onControlModeChange('button')}
+                  className={`font-pixel text-[8px] py-2 border-2 rounded transition-all
+                    ${controlMode === 'button' 
+                      ? 'border-primary text-primary bg-primary/10 shadow-[0_0_10px_rgba(var(--primary),0.3)]' 
+                      : 'border-border text-muted-foreground hover:border-foreground'}`}
+                >
+                  BUTTONS
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between mb-3">
               <span className="font-mono text-xs text-foreground">Sound</span>
               <button onClick={handleMute}

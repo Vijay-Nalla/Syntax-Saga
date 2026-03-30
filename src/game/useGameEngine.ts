@@ -105,6 +105,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     isUnderground: false,
     isNearTerminal: false,
     cameraX: 0,
+    controlMode: 'joystick',
   });
 
   const keysRef = useRef<Set<string>>(new Set());
@@ -150,8 +151,9 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       currentLevel: p.level,
       completedLevels: completedLevelsRef.current,
       bestScore: 0,
+      controlMode: gameState.controlMode,
     });
-  }, []);
+  }, [gameState.controlMode]);
 
   // ---- Level loading ----
   const loadLevel = useCallback((levelNum: number, language: Language) => {
@@ -271,7 +273,15 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     loadLevel(saved.currentLevel, saved.language);
     screenRef.current = 'playing';
     audioManager.startBGM();
-    setGameState(prev => ({ ...prev, screen: 'playing', player: { ...p }, currentLevel: saved.currentLevel, startTime: Date.now(), isUnderground: false }));
+    setGameState(prev => ({ 
+      ...prev, 
+      screen: 'playing', 
+      player: { ...p }, 
+      currentLevel: saved.currentLevel, 
+      startTime: Date.now(), 
+      isUnderground: false,
+      controlMode: saved.controlMode || 'joystick'
+    }));
   }, [loadLevel]);
 
   // ---- Pause / Resume ----
@@ -306,6 +316,10 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     screenRef.current = 'playing';
     setGameState(prev => ({ ...prev, screen: 'playing', player: { ...p }, currentLevel: 1, isPaused: false }));
   }, [loadLevel]);
+
+  const setControlMode = useCallback((mode: ControlMode) => {
+    setGameState(prev => ({ ...prev, controlMode: mode }));
+  }, []);
 
   // ---- Answer question ----
   const answerQuestion = useCallback((correct: boolean) => {
@@ -625,6 +639,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     resumeGame,
     returnToMenu,
     changeLanguage,
+    setControlMode,
     keysRef,
     getPlayTime: () => Math.floor((Date.now() - startTimeRef.current) / 1000),
     setGameState: (screen: GameState['screen']) => {

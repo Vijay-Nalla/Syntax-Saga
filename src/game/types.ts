@@ -1,4 +1,5 @@
 export type Language = 'javascript' | 'python' | 'c' | 'cpp' | 'java';
+export type ControlMode = 'joystick' | 'button';
 
 export interface LanguageInfo {
   id: Language;
@@ -111,6 +112,7 @@ export interface GameState {
   isUnderground: boolean;
   isNearTerminal?: boolean;
   cameraX?: number;
+  controlMode: ControlMode;
 }
 
 export interface LeaderboardEntry {

@@ -17,7 +17,7 @@ const Index = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const {
     gameState, startGame, answerQuestion, useHint, nextLevel, replayLevel,
-    pauseGame, resumeGame, returnToMenu, changeLanguage, setGameState, getPlayTime, keysRef,
+    pauseGame, resumeGame, returnToMenu, changeLanguage, setControlMode, setGameState, getPlayTime, keysRef,
   } = useGameEngine(canvasRef);
 
   const [playerNameLocal, setPlayerNameLocal] = useState(getPlayerName() || '');
@@ -104,6 +104,7 @@ const Index = () => {
             player={gameState.player}
             cameraX={gameState.cameraX}
             canvasRef={canvasRef}
+            controlMode={gameState.controlMode}
           />
         </>
       )}
@@ -122,6 +123,8 @@ const Index = () => {
           onChangeLanguage={changeLanguage}
           onViewLeaderboard={handleViewLeaderboard}
           currentLanguage={gameState.player.language}
+          controlMode={gameState.controlMode}
+          onControlModeChange={setControlMode}
         />
       )}
 

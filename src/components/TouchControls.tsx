@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Joystick } from './Joystick';
-import { PlayerState } from '@/game/types';
+import { PlayerState, ControlMode } from '@/game/types';
 
 interface TouchControlsProps {
   keysRef: React.MutableRefObject<Set<string>>;
@@ -10,6 +10,7 @@ interface TouchControlsProps {
   player?: PlayerState;
   cameraX?: number;
   canvasRef?: React.RefObject<HTMLCanvasElement | null>;
+  controlMode?: ControlMode;
 }
 
 export default function TouchControls({ 
@@ -19,7 +20,8 @@ export default function TouchControls({
   isNearTerminal = false,
   player,
   cameraX = 0,
-  canvasRef
+  canvasRef,
+  controlMode = 'joystick'
 }: TouchControlsProps) {
   const [isTouch, setIsTouch] = useState(false);
   const [canvasRect, setCanvasRect] = useState<DOMRect | null>(null);
@@ -78,6 +80,30 @@ export default function TouchControls({
 
   if (!isTouch) return null;
 
+  const handlePress = (key: string) => {
+    keysRef.current.add(key);
+  };
+
+  const handleRelease = (key: string) => {
+    keysRef.current.delete(key);
+  };
+
+  const buttonProps = (key: string) => ({
+    onTouchStart: (e: React.TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+      handlePress(key);
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+      handleRelease(key);
+    },
+    onTouchCancel: (e: React.TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+      handleRelease(key);
+    },
+    style: { touchAction: 'none' } as React.CSSProperties
+  });
+
   // Calculate ACT button position
   let actButtonPos = { top: 0, left: 0 };
   if (player && canvasRect) {
@@ -100,14 +126,44 @@ export default function TouchControls({
         />
       </div>
 
-      {/* Right Joystick (Actions) */}
-      <div className="absolute bottom-5 right-5 pointer-events-auto">
-        <Joystick 
-          onMove={handleActionJoystick} 
-          onEnd={handleActionEnd} 
-          label="ACTION"
-          color="hsl(280, 100%, 65%)" // Neon Purple
-        />
+      {/* Action Controls (Right Side) */}
+      <div className="absolute bottom-5 right-5 pointer-events-auto flex items-end gap-3 transition-all duration-300">
+        {controlMode === 'joystick' ? (
+          <Joystick 
+            onMove={handleActionJoystick} 
+            onEnd={handleActionEnd} 
+            label="ACTION"
+            color="hsl(280, 100%, 65%)" // Neon Purple
+          />
+        ) : (
+          <div className="flex items-center gap-3 mb-4 mr-2">
+            {/* BEND Button */}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[8px] font-pixel text-secondary/70 tracking-widest">BEND</span>
+              <button
+                {...buttonProps('ArrowDown')}
+                className="w-[70px] h-[70px] rounded-xl border-2 border-secondary/60 bg-secondary/10 backdrop-blur-sm
+                  flex flex-col items-center justify-center transition-all active:scale-90 active:bg-secondary/30
+                  shadow-[0_0_15px_rgba(var(--secondary),0.2)]"
+              >
+                <span className="text-xl text-secondary mb-1">↓</span>
+              </button>
+            </div>
+
+            {/* JUMP Button */}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[8px] font-pixel text-primary tracking-widest">JUMP</span>
+              <button
+                {...buttonProps(' ')}
+                className="w-[85px] h-[85px] rounded-xl border-2 border-primary bg-primary/20 backdrop-blur-md
+                  flex flex-col items-center justify-center transition-all active:scale-90 active:bg-primary/40
+                  shadow-[0_0_20px_rgba(var(--primary),0.4)]"
+              >
+                <span className="text-2xl text-primary mb-1">↑</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Floating ACT Button */}
