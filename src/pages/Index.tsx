@@ -96,7 +96,7 @@ const Index = () => {
             ☰
           </button>
           {/* Touch controls */}
-          <TouchControls keysRef={keysRef} onPause={pauseGame} />
+          <TouchControls keysRef={keysRef} onPause={pauseGame} onHint={useHint} />
         </>
       )}
 

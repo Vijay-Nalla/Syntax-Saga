@@ -4,9 +4,10 @@ import { Joystick } from './Joystick';
 interface TouchControlsProps {
   keysRef: React.MutableRefObject<Set<string>>;
   onPause: () => void;
+  onHint?: () => void;
 }
 
-export default function TouchControls({ keysRef, onPause }: TouchControlsProps) {
+export default function TouchControls({ keysRef, onPause, onHint }: TouchControlsProps) {
   const [isTouch, setIsTouch] = useState(false);
 
   useEffect(() => {
@@ -54,39 +55,51 @@ export default function TouchControls({ keysRef, onPause }: TouchControlsProps) 
   return (
     <div className="fixed inset-0 z-30 pointer-events-none select-none overflow-hidden" style={{ touchAction: 'none' }}>
       {/* Joystick — bottom left */}
-      <div className="absolute bottom-10 left-10 pointer-events-auto">
+      <div className="absolute bottom-12 left-8 pointer-events-auto">
         <Joystick onMove={handleJoystickMove} onEnd={handleJoystickEnd} />
       </div>
 
-      {/* Action buttons — bottom right */}
-      <div className="absolute bottom-10 right-10 pointer-events-auto flex items-end gap-6">
-        {/* Down/Bend Button (as alternative to Joystick down) */}
+      {/* Action buttons cluster — bottom right (Diamond/Arc layout to prevent collision) */}
+      <div className="absolute bottom-32 right-32 pointer-events-auto">
+        {/* Jump Button (Main - Top) */}
         <button
-          {...touchProps('ArrowDown')}
-          className="w-16 h-16 rounded-full border-2 border-secondary/60 bg-card/40 backdrop-blur-sm
-            flex items-center justify-center font-pixel text-[10px] text-secondary active:bg-secondary/30 active:scale-95 transition-all
-            shadow-[0_0_15px_hsla(var(--secondary)/0.3)]"
+          {...touchProps(' ')}
+          className="absolute -top-4 -left-4 w-20 h-20 rounded-full border-2 border-primary/80 bg-card/40 backdrop-blur-sm
+            flex items-center justify-center font-pixel text-[12px] text-primary active:bg-primary/30 active:scale-95 transition-all
+            shadow-[0_0_20px_hsla(var(--primary)/0.4)]"
+          style={{ transform: 'translate(40px, -40px)' }}
         >
-          BEND
+          JUMP
         </button>
 
-        {/* E/Interact Button */}
+        {/* Interact/ACT Button (Right) */}
         <button
           {...touchProps('e')}
-          className="w-14 h-14 rounded-full border-2 border-accent/60 bg-card/40 backdrop-blur-sm
+          className="absolute -top-2 -left-2 w-16 h-16 rounded-full border-2 border-accent/60 bg-card/40 backdrop-blur-sm
             flex items-center justify-center font-pixel text-[9px] text-accent active:bg-accent/30 active:scale-95 transition-all"
+          style={{ transform: 'translate(100px, 30px)' }}
         >
           ACT
         </button>
 
-        {/* Jump Button */}
+        {/* Bend/Crouch Button (Bottom) */}
         <button
-          {...touchProps(' ')}
-          className="w-20 h-20 rounded-full border-2 border-primary/80 bg-card/40 backdrop-blur-sm
-            flex items-center justify-center font-pixel text-[12px] text-primary active:bg-primary/30 active:scale-95 transition-all
-            shadow-[0_0_20px_hsla(var(--primary)/0.4)]"
+          {...touchProps('ArrowDown')}
+          className="absolute -top-2 -left-2 w-16 h-16 rounded-full border-2 border-secondary/60 bg-card/40 backdrop-blur-sm
+            flex items-center justify-center font-pixel text-[9px] text-secondary active:bg-secondary/30 active:scale-95 transition-all"
+          style={{ transform: 'translate(20px, 90px)' }}
         >
-          JUMP
+          BEND
+        </button>
+
+        {/* Hint Button (Left) */}
+        <button
+          onClick={(e) => { e.preventDefault(); onHint?.(); }}
+          className="absolute -top-2 -left-2 w-14 h-14 rounded-full border-2 border-neon-yellow/60 bg-card/40 backdrop-blur-sm
+            flex items-center justify-center font-pixel text-[8px] text-neon-yellow active:bg-neon-yellow/30 active:scale-95 transition-all"
+          style={{ transform: 'translate(-50px, 30px)' }}
+        >
+          HINT
         </button>
       </div>
     </div>
