@@ -103,6 +103,8 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     isPaused: false,
     startTime: Date.now(),
     isUnderground: false,
+    isNearTerminal: false,
+    cameraX: 0,
   });
 
   const keysRef = useRef<Set<string>>(new Set());
@@ -406,14 +408,23 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
 
       // Skip input during pipe transition
       if (!pipeTransitioningRef.current) {
+        // Crouch
+        p.isCrouching = keys.has('ArrowDown') || keys.has('s');
+
         // Movement
-        if (keys.has('ArrowLeft') || keys.has('a')) { p.vx = -MOVE_SPEED; p.facing = 'left'; }
-        else if (keys.has('ArrowRight') || keys.has('d')) { p.vx = MOVE_SPEED; p.facing = 'right'; }
+        if (keys.has('ArrowLeft') || keys.has('a')) { 
+          p.vx = p.isCrouching ? -MOVE_SPEED * 0.5 : -MOVE_SPEED; 
+          p.facing = 'left'; 
+        }
+        else if (keys.has('ArrowRight') || keys.has('d')) { 
+          p.vx = p.isCrouching ? MOVE_SPEED * 0.5 : MOVE_SPEED; 
+          p.facing = 'right'; 
+        }
         else { p.vx = 0; }
 
         // Jump (edge-detect)
         const jumpKeyDown = keys.has('ArrowUp') || keys.has('w') || keys.has(' ');
-        if (jumpKeyDown && !jumpKeyWasDown) {
+        if (jumpKeyDown && !jumpKeyWasDown && !p.isCrouching) {
           if (p.onGround) {
             p.vy = JUMP_FORCE;
             p.onGround = false;
@@ -432,6 +443,14 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       p.vy += GRAVITY;
       p.x += p.vx;
       p.y += p.vy;
+
+      // Adjust height for crouching
+      const currentHeight = p.isCrouching ? PLAYER_H / 2 : PLAYER_H;
+      const heightDiff = p.height - currentHeight;
+      if (heightDiff !== 0) {
+        p.y += heightDiff;
+        p.height = currentHeight;
+      }
 
       // Platform collision
       p.onGround = false;
@@ -537,9 +556,11 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       }
 
       // Terminals (surface only)
+      let isNearAnyTerminal = false;
       if (!isUndergroundRef.current) {
         for (const terminal of terminalsRef.current) {
           if (!terminal.used && Math.abs(p.x + p.width / 2 - terminal.x) < 30 && Math.abs(p.y + p.height - terminal.y - 40) < 30) {
+            isNearAnyTerminal = true;
             if (keys.has('e') || keys.has('Enter')) {
               terminal.used = true;
               const questions = levelQuestionsRef.current;
@@ -575,7 +596,12 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       }
 
       // Update HUD state
-      setGameState(prev => ({ ...prev, player: { ...p } }));
+      setGameState(prev => ({ 
+        ...prev, 
+        player: { ...p },
+        isNearTerminal: isNearAnyTerminal,
+        cameraX: cameraXRef.current
+      }));
 
       // Render
       renderFrame(ctx, p, cameraXRef.current, platformsRef.current, coinsRef.current, enemiesRef.current, terminalsRef.current, pipesRef.current, isUndergroundRef.current);

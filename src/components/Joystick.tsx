@@ -3,15 +3,17 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 interface JoystickProps {
   onMove: (x: number, y: number) => void;
   onEnd: () => void;
+  label?: string;
+  color?: string;
 }
 
-export const Joystick: React.FC<JoystickProps> = ({ onMove, onEnd }) => {
+export const Joystick: React.FC<JoystickProps> = ({ onMove, onEnd, label, color = 'var(--primary)' }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const touchIdRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const joystickSize = 100; // Total diameter
-  const handleSize = 50;    // Inner circle diameter
+  const joystickSize = 120; // Increased size as requested
+  const handleSize = 60;    // Proportional handle size
   const maxDistance = joystickSize / 2;
 
   const handleStart = (clientX: number, clientY: number, identifier: number) => {
@@ -87,23 +89,40 @@ export const Joystick: React.FC<JoystickProps> = ({ onMove, onEnd }) => {
   }, [isDragging, handleMove, handleEnd]);
 
   return (
-    <div 
-      ref={containerRef}
-      className="relative rounded-full bg-card/30 backdrop-blur-md border-2 border-primary/40 flex items-center justify-center touch-none pointer-events-auto select-none"
-      style={{ width: joystickSize, height: joystickSize, touchAction: 'none' }}
-      onTouchStart={(e) => {
-        const touch = e.changedTouches[0];
-        handleStart(touch.clientX, touch.clientY, touch.identifier);
-      }}
-    >
+    <div className="flex flex-col items-center gap-2 pointer-events-none select-none">
+      {label && (
+        <span className="text-[10px] font-pixel text-primary animate-pulse tracking-widest" 
+              style={{ color, textShadow: `0 0 8px ${color}` }}>
+          {label}
+        </span>
+      )}
       <div 
-        className="absolute rounded-full bg-primary/60 border-2 border-primary shadow-[0_0_15px_rgba(var(--primary),0.5)] transition-transform duration-75 pointer-events-none"
+        ref={containerRef}
+        className="relative rounded-full bg-card/20 backdrop-blur-sm border-2 flex items-center justify-center touch-none pointer-events-auto transition-shadow duration-300"
         style={{ 
-          width: handleSize, 
-          height: handleSize,
-          transform: `translate(${position.x}px, ${position.y}px)`
+          width: joystickSize, 
+          height: joystickSize, 
+          touchAction: 'none',
+          borderColor: color,
+          boxShadow: isDragging ? `0 0 20px ${color}66` : `0 0 10px ${color}33`
         }}
-      />
+        onTouchStart={(e) => {
+          const touch = e.changedTouches[0];
+          handleStart(touch.clientX, touch.clientY, touch.identifier);
+        }}
+      >
+        <div 
+          className="absolute rounded-full border-2 transition-transform duration-75 pointer-events-none"
+          style={{ 
+            width: handleSize, 
+            height: handleSize,
+            backgroundColor: `${color}99`,
+            borderColor: color,
+            boxShadow: `0 0 15px ${color}`,
+            transform: `translate(${position.x}px, ${position.y}px)`
+          }}
+        />
+      </div>
     </div>
   );
 };

@@ -225,21 +225,30 @@ export function renderFrame(
   ctx.save();
   ctx.shadowColor = '#6090ff';
   ctx.shadowBlur = 12;
+
+  // Crouch adjustment
+  let py = p.y;
+  let ph = PLAYER_H;
+  if (p.isCrouching) {
+    py += 20;
+    ph -= 20;
+  }
+
   // Body - blue
   ctx.fillStyle = '#5080dd';
-  ctx.fillRect(ppx + 4, p.y + 8, PLAYER_W - 8, PLAYER_H - 16);
+  ctx.fillRect(ppx + 4, py + 8, PLAYER_W - 8, ph - 16);
   // Head - darker blue
   ctx.fillStyle = '#3060bb';
-  ctx.fillRect(ppx + 6, p.y, PLAYER_W - 12, 14);
+  ctx.fillRect(ppx + 6, py, PLAYER_W - 12, 14);
   // Visor - red accent
   ctx.fillStyle = '#dd4466';
   const visorX = p.facing === 'right' ? ppx + 14 : ppx + 6;
-  ctx.fillRect(visorX, p.y + 4, 12, 5);
+  ctx.fillRect(visorX, py + 4, 12, 5);
   // Legs
   const legAnim = Math.abs(p.vx) > 0 ? Math.sin(Date.now() / 80) * 4 : 0;
   ctx.fillStyle = '#2a4488';
-  ctx.fillRect(ppx + 6, p.y + PLAYER_H - 10 + legAnim, 8, 10);
-  ctx.fillRect(ppx + PLAYER_W - 14, p.y + PLAYER_H - 10 - legAnim, 8, 10);
+  ctx.fillRect(ppx + 6, py + ph - 10 + (p.isCrouching ? 0 : legAnim), 8, 10);
+  ctx.fillRect(ppx + PLAYER_W - 14, py + ph - 10 - (p.isCrouching ? 0 : legAnim), 8, 10);
   ctx.restore();
 
   // End gate - blue-red

@@ -98,6 +98,7 @@ export interface PlayerState {
   language: Language;
   coins: number;
   name: string;
+  isCrouching?: boolean;
 }
 
 export interface GameState {
@@ -108,6 +109,8 @@ export interface GameState {
   isPaused: boolean;
   startTime: number;
   isUnderground: boolean;
+  isNearTerminal?: boolean;
+  cameraX?: number;
 }
 
 export interface LeaderboardEntry {

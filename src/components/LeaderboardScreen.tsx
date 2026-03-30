@@ -1,4 +1,6 @@
 import { getLeaderboard } from '@/game/leaderboard';
+import { useEffect, useState } from 'react';
+import { LeaderboardEntry } from '@/game/types';
 
 interface LeaderboardScreenProps {
   onBack: () => void;
@@ -11,7 +13,22 @@ function formatTime(seconds: number): string {
 }
 
 export default function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
-  const entries = getLeaderboard();
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBoard = async () => {
+      try {
+        const data = await getLeaderboard();
+        setEntries(data);
+      } catch (err) {
+        console.error('Failed to load leaderboard:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBoard();
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
@@ -22,14 +39,18 @@ export default function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
           LEADERBOARD
         </h2>
 
-        {entries.length === 0 ? (
+        {loading ? (
+          <p className="font-pixel text-[10px] text-muted-foreground text-center py-8 animate-pulse">
+            ACCESSING DATABASE...
+          </p>
+        ) : entries.length === 0 ? (
           <p className="font-mono text-sm text-muted-foreground text-center py-8">
             No scores yet. Be the first to hack the system!
           </p>
         ) : (
-          <div className="space-y-1 mb-4">
+          <div className="space-y-1 mb-4 max-h-[400px] overflow-y-auto custom-scrollbar">
             {/* Header */}
-            <div className="grid grid-cols-[2rem_1fr_3rem_3rem_4rem_4rem] gap-2 font-pixel text-[7px] text-muted-foreground px-2 pb-2 border-b border-border">
+            <div className="grid grid-cols-[2rem_1fr_3rem_3rem_4rem_4rem] gap-2 font-pixel text-[7px] text-muted-foreground px-2 pb-2 border-b border-border sticky top-0 bg-card z-10">
               <span>#</span><span>NAME</span><span>LVL</span><span>COIN</span><span>TIME</span><span>SCORE</span>
             </div>
             {entries.map((e, i) => (
