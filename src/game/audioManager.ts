@@ -49,7 +49,7 @@ class AudioManager {
   private ensureContext() {
     if (!this.ctx) {
       // Create context using a cross-browser approach
-      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass = (window as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (AudioContextClass) {
         this.ctx = new AudioContextClass();
         this.masterGain = this.ctx!.createGain();

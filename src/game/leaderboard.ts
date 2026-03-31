@@ -44,9 +44,9 @@ export async function addLeaderboardEntry(entry: Omit<LeaderboardEntry, 'score' 
     console.error('Error posting leaderboard entry to backend:', error);
     // Fallback to local storage
     const localEntry: LeaderboardEntry = { ...full, date: new Date().toLocaleDateString() };
-    const board = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const board = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as LeaderboardEntry[];
     board.push(localEntry);
-    board.sort((a: any, b: any) => b.score - a.score);
+    board.sort((a, b) => b.score - a.score);
     const trimmed = board.slice(0, MAX_ENTRIES);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
     return trimmed;

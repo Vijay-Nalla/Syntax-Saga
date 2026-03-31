@@ -41,7 +41,7 @@ export default function TitleScreen({ onStart, onLeaderboard, onGoogleSuccess }:
     return () => clearInterval(interval);
   }, [showStory]);
 
-  const handleGoogleSuccess = (credentialResponse: any) => {
+  const handleGoogleSuccess = (credentialResponse: { credential?: string }) => {
     try {
       // Decrypt the JWT token to get user info (simplified for demo)
       const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));

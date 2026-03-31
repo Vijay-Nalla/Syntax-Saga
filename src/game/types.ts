@@ -113,6 +113,8 @@ export interface GameState {
   isNearTerminal?: boolean;
   cameraX?: number;
   controlMode: ControlMode;
+  maxProgressX?: number;
+  lockX?: number;
 }
 
 export interface LeaderboardEntry {

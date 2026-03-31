@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { PlayerState, GameState, Language, Question, Platform, EnemyType, ENEMY_CONFIG, PipeSpawn, EnemySpawn } from './types';
+import { PlayerState, GameState, Language, Question, Platform, EnemyType, ENEMY_CONFIG, PipeSpawn, EnemySpawn, ControlMode } from './types';
 import { getLevelData } from './levels';
 import { getQuestionsForLevel } from './questions';
 import { renderFrame } from './renderer';
@@ -29,7 +29,7 @@ interface Coin {
   x: number; y: number; collected: boolean;
 }
 interface Terminal {
-  x: number; y: number; questionIndex: number; used: boolean;
+  x: number; y: number; questionIndex: number; used: boolean; completed: boolean;
 }
 
 // ---- Question tracker (no repeats within level session) ----
@@ -106,6 +106,8 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     isNearTerminal: false,
     cameraX: 0,
     controlMode: 'joystick',
+    maxProgressX: 0,
+    lockX: 0,
   });
 
   const keysRef = useRef<Set<string>>(new Set());
@@ -165,7 +167,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     platformsRef.current = data.platformLayout.filter(p => p.width > 0);
     coinsRef.current = data.coins.map(c => ({ ...c, collected: false }));
     enemiesRef.current = data.enemies.map(e => ({ ...e, startX: e.x, dir: 1, alive: true }));
-    terminalsRef.current = data.terminals.map(t => ({ ...t, used: false }));
+    terminalsRef.current = data.terminals.map(t => ({ ...t, used: false, completed: false }));
     surfaceTerminalsRef.current = [...terminalsRef.current];
     pipesRef.current = data.pipes || [];
 
@@ -192,6 +194,9 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     pipeStandingOnRef.current = null;
     pipeCooldownRef.current = 0;
     pipeTransitioningRef.current = false;
+
+    // Reset progress locks
+    setGameState(prev => ({ ...prev, maxProgressX: 0, lockX: 0 }));
   }, []);
 
   // Pipe transition helpers (plain functions, not hooks — avoids hook count changes)
@@ -253,7 +258,9 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
         const lvl = Math.max(1, Math.min(50, parseInt(lvlStr, 10) || 1));
         startLevel = lvl;
       }
-    } catch {}
+    } catch (e) {
+      console.error("Failed to parse level from URL", e);
+    }
     loadLevel(startLevel, language);
     screenRef.current = 'playing';
     audioManager.startBGM();
@@ -304,7 +311,19 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     persistProgress();
     audioManager.stopBGM();
     screenRef.current = 'title';
-    setGameState({ screen: 'title', player: { ...playerRef.current }, currentLevel: 1, currentQuestion: null, isPaused: false, startTime: Date.now(), isUnderground: false });
+    setGameState(prev => ({
+      ...prev,
+      screen: 'title',
+      currentLevel: 1,
+      currentQuestion: null,
+      isPaused: false,
+      startTime: Date.now(),
+      isUnderground: false,
+      isNearTerminal: false,
+      cameraX: 0,
+      maxProgressX: 0,
+      lockX: 0,
+    }));
   }, [persistProgress]);
 
   // ---- Change language mid-game ----
@@ -328,6 +347,13 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       p.xp += 50;
       p.coins += 5;
       audioManager.correctAnswer();
+
+      // Lock progress to the completed terminal
+      const completedTerminal = terminalsRef.current.find(t => t.used && !t.completed);
+      if (completedTerminal) {
+        completedTerminal.completed = true;
+        setGameState(prev => ({ ...prev, lockX: Math.max(prev.lockX || 0, completedTerminal.x) }));
+      }
     } else {
       p.health = Math.max(0, p.health - 15);
       audioManager.wrongAnswer();
@@ -484,10 +510,29 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
         }
       }
 
-      // Boundaries
+      // Boundaries and Progress Lock
       if (p.x < 0) p.x = 0;
       if (p.x > CANVAS_W - p.width) p.x = CANVAS_W - p.width;
       if (p.y > CANVAS_H) { p.health = 0; }
+
+      // Update max progress
+      setGameState(prev => {
+        const newMaxX = Math.max(prev.maxProgressX || 0, p.x);
+        
+        // Calculate backward limit
+        const backwardLimit = VIEWPORT_W * 0.2; // 20% of screen width
+        const softLockX = Math.max(0, newMaxX - backwardLimit);
+        const hardLockX = prev.lockX || 0;
+        const effectiveLockX = Math.max(softLockX, hardLockX);
+
+        // Clamp player position
+        if (p.x < effectiveLockX) {
+          p.x = effectiveLockX;
+          p.vx = 0; // Stop backward momentum
+        }
+
+        return { ...prev, maxProgressX: newMaxX };
+      });
 
       // Camera
       cameraXRef.current = Math.max(0, Math.min(p.x - VIEWPORT_W / 2, CANVAS_W - VIEWPORT_W));
@@ -618,7 +663,14 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       }));
 
       // Render
-      renderFrame(ctx, p, cameraXRef.current, platformsRef.current, coinsRef.current, enemiesRef.current, terminalsRef.current, pipesRef.current, isUndergroundRef.current);
+      setGameState(prev => {
+        const backwardLimit = VIEWPORT_W * 0.2;
+        const softLockX = Math.max(0, (prev.maxProgressX || 0) - backwardLimit);
+        const effectiveLockX = Math.max(softLockX, prev.lockX || 0);
+        
+        renderFrame(ctx, p, cameraXRef.current, platformsRef.current, coinsRef.current, enemiesRef.current, terminalsRef.current, pipesRef.current, isUndergroundRef.current, effectiveLockX);
+        return prev;
+      });
 
       animFrameRef.current = requestAnimationFrame(loop);
     };
