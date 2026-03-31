@@ -31,41 +31,7 @@ export function renderFrame(
   ctx.fillStyle = isUnderground ? '#0a0800' : '#080c14';
   ctx.fillRect(0, 0, VIEWPORT_W, CANVAS_H);
 
-  // Render Progress Lock Barrier
-  if (lockX > 0) {
-    const barrierX = lockX - cam;
-    if (barrierX > -50 && barrierX < VIEWPORT_W + 50) {
-      ctx.save();
-      
-      // Create a glowing gradient for the barrier
-      const gradient = ctx.createLinearGradient(barrierX, 0, barrierX + 20, 0);
-      gradient.addColorStop(0, 'rgba(255, 0, 80, 0.4)'); // Neon pink/red edge
-      gradient.addColorStop(1, 'rgba(255, 0, 80, 0)');   // Fade out
-      
-      ctx.fillStyle = gradient;
-      ctx.fillRect(barrierX, 0, 20, CANVAS_H);
-      
-      // Solid edge line
-      ctx.strokeStyle = 'rgba(255, 0, 80, 0.8)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(barrierX, 0);
-      ctx.lineTo(barrierX, CANVAS_H);
-      ctx.stroke();
-
-      // Add some "locked" text or symbols occasionally
-      ctx.fillStyle = 'rgba(255, 0, 80, 0.6)';
-      ctx.font = '8px "Press Start 2P"';
-      ctx.textAlign = 'left';
-      ctx.save();
-      ctx.translate(barrierX + 5, CANVAS_H / 2);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillText('AREA LOCKED', 0, 0);
-      ctx.restore();
-
-      ctx.restore();
-    }
-  }
+  // Progress lock barrier is now invisible. The logic is handled in useGameEngine.
 
   // Grid background - blue tint
   const gridColor = isUnderground ? 'rgba(180, 120, 0, 0.05)' : 'rgba(100, 150, 255, 0.05)';

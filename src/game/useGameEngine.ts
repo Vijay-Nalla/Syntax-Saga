@@ -515,22 +515,18 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       if (p.x > CANVAS_W - p.width) p.x = CANVAS_W - p.width;
       if (p.y > CANVAS_H) { p.health = 0; }
 
-      // Update max progress
+      // Hard Progress Lock
       setGameState(prev => {
-        const newMaxX = Math.max(prev.maxProgressX || 0, p.x);
-        
-        // Calculate backward limit
-        const backwardLimit = VIEWPORT_W * 0.2; // 20% of screen width
-        const softLockX = Math.max(0, newMaxX - backwardLimit);
         const hardLockX = prev.lockX || 0;
-        const effectiveLockX = Math.max(softLockX, hardLockX);
 
         // Clamp player position
-        if (p.x < effectiveLockX) {
-          p.x = effectiveLockX;
+        if (p.x < hardLockX) {
+          p.x = hardLockX;
           p.vx = 0; // Stop backward momentum
         }
-
+        
+        // Continue updating maxProgressX for stats, but it's no longer used for locking.
+        const newMaxX = Math.max(prev.maxProgressX || 0, p.x);
         return { ...prev, maxProgressX: newMaxX };
       });
 
@@ -664,11 +660,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
 
       // Render
       setGameState(prev => {
-        const backwardLimit = VIEWPORT_W * 0.2;
-        const softLockX = Math.max(0, (prev.maxProgressX || 0) - backwardLimit);
-        const effectiveLockX = Math.max(softLockX, prev.lockX || 0);
-        
-        renderFrame(ctx, p, cameraXRef.current, platformsRef.current, coinsRef.current, enemiesRef.current, terminalsRef.current, pipesRef.current, isUndergroundRef.current, effectiveLockX);
+        renderFrame(ctx, p, cameraXRef.current, platformsRef.current, coinsRef.current, enemiesRef.current, terminalsRef.current, pipesRef.current, isUndergroundRef.current, prev.lockX || 0);
         return prev;
       });
 
