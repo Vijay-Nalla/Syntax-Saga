@@ -920,6 +920,236 @@ const CPP_QUESTIONS: Question[] = (() => {
   return list.slice(0, 200);
 })();
 
+
+const R_QUESTIONS: Question[] = (() => {
+  const list: Question[] = [];
+  const pushMCQ = (prompt: string, options: string[], answer: string, code?: string, explanation?: string): void => {
+    const opts = [...options];
+    const q: Question = { type: 'mcq', question: prompt, options: opts, answer, explanation: explanation ?? '', code };
+    list.push(q);
+  };
+  const pushTyping = (prompt: string, answer: string, code?: string, explanation?: string): void => {
+    const q: Question = { type: 'fill-blank', question: prompt, answer, explanation: explanation ?? '', code };
+    list.push(q);
+  };
+
+  pushMCQ('Which function prints output in R?', ['echo()', 'print()', 'display()', 'write()'], 'print()');
+  pushTyping('What symbol is used to assign values in R (most common)?', '<-');
+  pushMCQ('Which function creates a vector in R?', ['array()', 'vector()', 'c()', 'list()'], 'c()');
+  pushTyping('What function calculates the mean of a vector?', 'mean');
+  pushMCQ('Which data structure stores key-value pairs in R?', ['array', 'list', 'data.frame', 'matrix'], 'list');
+  pushTyping('What function reads a CSV file?', 'read.csv');
+  pushMCQ('Which operator performs element-wise multiplication?', ['*', '%*%', 'x', '%o%'], '*');
+  pushTyping('What function creates a sequence of numbers?', 'seq');
+  pushMCQ('Which package is used for data manipulation (dplyr)?', ['ggplot2', 'dplyr', 'tidyr', 'stringr'], 'dplyr');
+  pushTyping('What function creates a data frame?', 'data.frame');
+  pushMCQ('Which function returns the length of a vector?', ['size()', 'length()', 'count()', 'n()'], 'length()');
+  pushTyping('What operator tests for equality?', '==');
+  pushMCQ('Which function generates random numbers from a normal distribution?', ['rnorm()', 'runif()', 'rpois()', 'rexp()'], 'rnorm()');
+  pushTyping('What function loads a package?', 'library');
+  pushMCQ('Which function writes a CSV file?', ['save.csv()', 'write.csv()', 'export.csv()', 'put.csv()'], 'write.csv()');
+  pushTyping('What function applies a function to each element of a vector?', 'lapply');
+  pushMCQ('Which data structure is two-dimensional with rows and columns of the same type?', ['data.frame', 'matrix', 'array', 'list'], 'matrix');
+  pushTyping('What function creates a histogram?', 'hist');
+  pushMCQ('Which operator is used for matrix multiplication?', ['*', '%*%', 'x', '%o%'], '%*%');
+  pushTyping('What function returns the first n elements of an object?', 'head');
+  pushMCQ('Which package is used for data visualization?', ['dplyr', 'tidyr', 'ggplot2', 'lubridate'], 'ggplot2');
+  pushTyping('What function sorts a vector?', 'sort');
+  pushMCQ('Which function checks if a value is missing (NA)?', ['is.na()', 'is.missing()', 'na.check()', 'check.na()'], 'is.na()');
+  pushTyping('What function combines objects by rows?', 'rbind');
+  pushMCQ('Which function combines objects by columns?', ['cbind()', 'rbind()', 'merge()', 'join()'], 'cbind()');
+  pushTyping('What function calculates the sum of a vector?', 'sum');
+  pushMCQ('Which function returns the number of rows in a data frame?', ['nrow()', 'ncol()', 'count()', 'length()'], 'nrow()');
+  pushTyping('What function returns the number of columns in a data frame?', 'ncol');
+  pushMCQ('Which function merges two data frames?', ['join()', 'merge()', 'combine()', 'rbind()'], 'merge()');
+  pushTyping('What function creates a boxplot?', 'boxplot');
+  pushMCQ('Which function creates a scatter plot?', ['hist()', 'boxplot()', 'plot()', 'barplot()'], 'plot()');
+  pushTyping('What function calculates standard deviation?', 'sd');
+  pushMCQ('Which function calculates variance?', ['var()', 'sd()', 'cov()', 'cor()'], 'var()');
+  pushTyping('What function calculates correlation between two variables?', 'cor');
+  pushMCQ('Which function creates a bar plot?', ['hist()', 'barplot()', 'plot()', 'boxplot()'], 'barplot()');
+  pushTyping('What function generates random numbers from a uniform distribution?', 'runif');
+  pushMCQ('Which function fits a linear regression model?', ['glm()', 'lm()', 'aov()', 't.test()'], 'lm()');
+  pushTyping('What function performs a t-test?', 't.test');
+  pushMCQ('Which function creates a factor?', ['factor()', 'as.factor()', 'make.factor()', 'both factor() and as.factor()'], 'both factor() and as.factor()');
+  pushTyping('What function extracts a subset of a data frame?', 'subset');
+  pushMCQ('Which function creates a list?', ['c()', 'list()', 'vector()', 'array()'], 'list()');
+  pushTyping('What function returns the names of an object?', 'names');
+  pushMCQ('Which function sets the names of an object?', ['set.names()', 'names()', 'rename()', 'name()'], 'names()');
+  pushTyping('What function creates a matrix?', 'matrix');
+  pushMCQ('Which function applies a function over margins of an array?', ['apply()', 'lapply()', 'sapply()', 'tapply()'], 'apply()');
+  pushTyping('What function applies a function to a list and returns a vector?', 'sapply');
+  pushMCQ('Which function applies a function to subsets of a vector?', ['tapply()', 'apply()', 'lapply()', 'sapply()'], 'tapply()');
+  pushTyping('What function creates a time series object?', 'ts');
+  pushMCQ('Which function calculates cumulative sum?', ['cumsum()', 'cumprod()', 'sum()', 'cumsum() and cumprod()'], 'cumsum() and cumprod()');
+  pushTyping('What function calculates cumulative product?', 'cumprod');
+  pushMCQ('Which function finds the maximum value in a vector?', ['max()', 'min()', 'which.max()', 'which.min()'], 'max()');
+  pushTyping('What function finds the minimum value in a vector?', 'min');
+  pushMCQ('Which function finds the index of the maximum value?', ['max()', 'which.max()', 'index.max()', 'find.max()'], 'which.max()');
+  pushTyping('What function finds the index of the minimum value?', 'which.min');
+  pushMCQ('Which function creates a logical vector of repeated values?', ['rep()', 'seq()', 'c()', 'repeat()'], 'rep()');
+  pushTyping('What function creates a vector of repeated values?', 'rep');
+  pushMCQ('Which function reverses a vector?', ['rev()', 'reverse()', 'flip()', 'invert()'], 'rev()');
+  pushTyping('What function removes duplicate values?', 'unique');
+  pushMCQ('Which function finds matching values?', ['match()', 'find()', 'search()', 'which()'], 'match()');
+  pushTyping('What function returns indices of TRUE values?', 'which');
+  pushMCQ('Which function pastes strings together?', ['paste()', 'paste0()', 'concat()', 'paste() and paste0()'], 'paste() and paste0()');
+  pushTyping('What function pastes strings without separator?', 'paste0');
+  pushMCQ('Which function splits a string?', ['split()', 'strsplit()', 'divide()', 'break()'], 'strsplit()');
+  pushTyping('What function converts string to uppercase?', 'toupper');
+  pushMCQ('Which function converts string to lowercase?', ['tolower()', 'toupper()', 'lower()', 'upper()'], 'tolower()');
+  pushTyping('What function replaces substrings?', 'sub');
+  pushMCQ('Which function replaces all occurrences of a substring?', ['sub()', 'gsub()', 'replace()', 'allsub()'], 'gsub()');
+  pushTyping('What function counts characters in a string?', 'nchar');
+  pushMCQ('Which function extracts substrings?', ['substr()', 'substring()', 'extract()', 'substr() and substring()'], 'substr() and substring()');
+  pushTyping('What function gets the current date?', 'Sys.Date');
+  pushMCQ('Which function gets the current date and time?', ['Sys.time()', 'Sys.Date()', 'now()', 'datetime()'], 'Sys.time()');
+  pushTyping('What package is used for date and time manipulation?', 'lubridate');
+  pushMCQ('Which function reads a text file?', ['read.csv()', 'read.table()', 'read.text()', 'read.file()'], 'read.table()');
+  pushTyping('What function saves an R object to a file?', 'save');
+  pushMCQ('Which function loads a saved R object?', ['load()', 'read()', 'open()', 'import()'], 'load()');
+  pushTyping('What function saves workspace to a file?', 'save.image');
+  pushMCQ('Which function creates a new environment?', ['new.env()', 'environment()', 'env()', 'create.env()'], 'new.env()');
+  pushTyping('What function gets the current working directory?', 'getwd');
+  pushMCQ('Which function sets the working directory?', ['setwd()', 'getwd()', 'wd.set()', 'dir.set()'], 'setwd()');
+  pushTyping('What function lists files in a directory?', 'list.files');
+  pushMCQ('Which function creates a directory?', ['mkdir()', 'dir.create()', 'create.dir()', 'make.dir()'], 'dir.create()');
+  pushTyping('What function removes an object?', 'rm');
+  pushMCQ('Which function lists all objects in the workspace?', ['ls()', 'objects()', 'list()', 'ls() and objects()'], 'ls() and objects()');
+  pushTyping('What function checks if an object exists?', 'exists');
+  pushMCQ('Which function gets the class of an object?', ['class()', 'typeof()', 'mode()', 'class() and typeof()'], 'class() and typeof()');
+  pushTyping('What function gets the type of an object?', 'typeof');
+  pushMCQ('Which function gets the storage mode of an object?', ['mode()', 'typeof()', 'class()', 'storage.mode()'], 'storage.mode()');
+  pushTyping('What function converts to numeric?', 'as.numeric');
+  pushMCQ('Which function converts to character?', ['as.char()', 'as.character()', 'char()', 'character()'], 'as.character()');
+  pushTyping('What function converts to integer?', 'as.integer');
+  pushMCQ('Which function converts to logical?', ['as.logical()', 'as.bool()', 'logical()', 'bool()'], 'as.logical()');
+  pushTyping('What function checks if an object is numeric?', 'is.numeric');
+  pushMCQ('Which function checks if an object is a data frame?', ['is.data.frame()', 'is.df()', 'data.frame()', 'is.data()'], 'is.data.frame()');
+  pushTyping('What function checks if an object is a matrix?', 'is.matrix');
+  pushMCQ('Which function checks if an object is a list?', ['is.list()', 'list.is()', 'is.object()', 'list()'], 'is.list()');
+  pushTyping('What function checks if an object is a factor?', 'is.factor');
+  pushMCQ('Which function fits a generalized linear model?', ['lm()', 'glm()', 'aov()', 'anova()'], 'glm()');
+  pushTyping('What function performs ANOVA?', 'aov');
+  pushMCQ('Which function performs chi-square test?', ['chisq.test()', 't.test()', 'prop.test()', 'fisher.test()'], 'chisq.test()');
+  pushTyping('What function performs Fisher exact test?', 'fisher.test');
+  pushMCQ('Which function performs proportion test?', ['prop.test()', 'chisq.test()', 't.test()', 'binom.test()'], 'prop.test()');
+  pushTyping('What function performs binomial test?', 'binom.test');
+  pushMCQ('Which function creates a density plot?', ['plot()', 'hist()', 'density()', 'density() followed by plot()'], 'density() followed by plot()');
+  pushTyping('What function estimates kernel density?', 'density');
+  pushMCQ('Which function creates a Q-Q plot?', ['qqplot()', 'qqnorm()', 'qqline()', 'qqnorm() and qqline()'], 'qqnorm() and qqline()');
+  pushTyping('What function adds a line to a Q-Q plot?', 'qqline');
+  pushMCQ('Which function creates a normal Q-Q plot?', ['qqplot()', 'qqnorm()', 'qqline()', 'norm.qq()'], 'qqnorm()');
+  pushTyping('What function creates a contingency table?', 'table');
+  pushMCQ('Which function calculates cross-tabulation?', ['table()', 'xtabs()', 'ftable()', 'all of these'], 'all of these');
+  pushTyping('What function flattens a contingency table?', 'ftable');
+  pushMCQ('Which function calculates marginals of a table?', ['margin.table()', 'addmargins()', 'prop.table()', 'margin.table() and prop.table()'], 'margin.table() and prop.table()');
+  pushTyping('What function adds margins to a table?', 'addmargins');
+  pushMCQ('Which function converts table to proportions?', ['prop.table()', 'margin.table()', 'addmargins()', 'table.prop()'], 'prop.table()');
+  pushTyping('What function samples from a vector?', 'sample');
+  pushMCQ('Which function sets the random seed?', ['set.seed()', 'seed()', 'random.seed()', 'set.random()'], 'set.seed()');
+  pushTyping('What function generates random integers?', 'sample.int');
+  pushMCQ('Which function generates random numbers from Poisson distribution?', ['rpois()', 'rnorm()', 'runif()', 'rexp()'], 'rpois()');
+  pushTyping('What function generates random numbers from exponential distribution?', 'rexp');
+  pushMCQ('Which function generates random numbers from binomial distribution?', ['rbinom()', 'rpois()', 'rnorm()', 'runif()'], 'rbinom()');
+  pushTyping('What function calculates quantiles?', 'quantile');
+  pushMCQ('Which function calculates median?', ['median()', 'mean()', 'quantile()', 'median() and quantile()'], 'median() and quantile()');
+  pushTyping('What function calculates range?', 'range');
+  pushMCQ('Which function calculates interquartile range?', ['IQR()', 'range()', 'quantile()', 'iqr()'], 'IQR()');
+  pushTyping('What function calculates covariance?', 'cov');
+  pushMCQ('Which function performs principal component analysis?', ['prcomp()', 'princomp()', 'pca()', 'prcomp() and princomp()'], 'prcomp() and princomp()');
+  pushTyping('What function performs hierarchical clustering?', 'hclust');
+  pushMCQ('Which function cuts a dendrogram?', ['cutree()', 'cut()', 'tree.cut()', 'hclust.cut()'], 'cutree()');
+  pushTyping('What function creates a dendrogram plot?', 'plot');
+  pushMCQ('Which function performs k-means clustering?', ['kmeans()', 'kmean()', 'cluster.kmeans()', 'km()'], 'kmeans()');
+  pushTyping('What function creates a heatmap?', 'heatmap');
+  pushMCQ('Which function creates a pairs plot?', ['pairs()', 'plot()', 'scatterplot()', 'pair.plot()'], 'pairs()');
+  pushTyping('What function creates a mosaic plot?', 'mosaicplot');
+  pushMCQ('Which function creates an interaction plot?', ['interaction.plot()', 'plot.interaction()', 'interact.plot()', 'int.plot()'], 'interaction.plot()');
+  pushTyping('What function creates a dot plot?', 'dotchart');
+  pushMCQ('Which function adds a legend to a plot?', ['legend()', 'add.legend()', 'plot.legend()', 'make.legend()'], 'legend()');
+  pushTyping('What function adds a title to a plot?', 'title');
+  pushMCQ('Which function adds text to a plot?', ['text()', 'add.text()', 'plot.text()', 'write()'], 'text()');
+  pushTyping('What function adds points to a plot?', 'points');
+  pushMCQ('Which function adds lines to a plot?', ['lines()', 'add.lines()', 'plot.lines()', 'line()'], 'lines()');
+  pushTyping('What function adds a grid to a plot?', 'grid');
+  pushMCQ('Which function adds an axis to a plot?', ['axis()', 'add.axis()', 'plot.axis()', 'make.axis()'], 'axis()');
+  pushTyping('What function adds a polygon to a plot?', 'polygon');
+  pushMCQ('Which function adds rectangles to a plot?', ['rect()', 'add.rect()', 'plot.rect()', 'rectangle()'], 'rect()');
+  pushTyping('What function adds arrows to a plot?', 'arrows');
+  pushMCQ('Which function adds segments to a plot?', ['segments()', 'add.segments()', 'plot.segments()', 'segment()'], 'segments()');
+  pushTyping('What function creates a new plot device?', 'dev.new');
+  pushMCQ('Which function saves a plot to a PDF file?', ['pdf()', 'save.pdf()', 'plot.pdf()', 'dev.pdf()'], 'pdf()');
+  pushTyping('What function saves a plot to a PNG file?', 'png');
+  pushMCQ('Which function saves a plot to a JPEG file?', ['jpeg()', 'jpg()', 'save.jpeg()', 'plot.jpeg()'], 'jpeg()');
+  pushTyping('What function saves a plot to a SVG file?', 'svg');
+  pushMCQ('Which function closes the current plot device?', ['dev.off()', 'close.device()', 'device.off()', 'dev.close()'], 'dev.off()');
+  pushTyping('What function lists all plot devices?', 'dev.list');
+  pushMCQ('Which function sets the current plot device?', ['dev.set()', 'set.device()', 'device.set()', 'dev.current()'], 'dev.set()');
+  pushTyping('What function copies a plot to another device?', 'dev.copy');
+  pushMCQ('Which function in dplyr filters rows?', ['filter()', 'select()', 'mutate()', 'arrange()'], 'filter()');
+  pushTyping('What function in dplyr selects columns?', 'select');
+  pushMCQ('Which function in dplyr creates new columns?', ['mutate()', 'filter()', 'select()', 'summarize()'], 'mutate()');
+  pushTyping('What function in dplyr arranges rows?', 'arrange');
+  pushMCQ('Which function in dplyr summarizes data?', ['summarize()', 'mutate()', 'filter()', 'group_by()'], 'summarize()');
+  pushTyping('What function in dplyr groups data?', 'group_by');
+  pushMCQ('Which function in dplyr joins two data frames?', ['left_join()', 'inner_join()', 'right_join()', 'all of these'], 'all of these');
+  pushTyping('What pipe operator is used in tidyverse?', '%>%');
+  pushMCQ('Which function in tidyr gathers columns into key-value pairs?', ['gather()', 'spread()', 'pivot_longer()', 'both gather() and pivot_longer()'], 'both gather() and pivot_longer()');
+  pushTyping('What function in tidyr spreads key-value pairs into columns?', 'spread');
+  pushMCQ('Which function in tidyr separates a column into multiple columns?', ['separate()', 'unite()', 'split()', 'divide()'], 'separate()');
+  pushTyping('What function in tidyr unites multiple columns into one?', 'unite');
+  pushMCQ('Which function in stringr detects patterns?', ['str_detect()', 'str_extract()', 'str_replace()', 'str_match()'], 'str_detect()');
+  pushTyping('What function in stringr extracts patterns?', 'str_extract');
+  pushMCQ('Which function in stringr replaces patterns?', ['str_replace()', 'str_replace_all()', 'str_sub()', 'str_replace() and str_replace_all()'], 'str_replace() and str_replace_all()');
+  pushTyping('What function in stringr replaces all occurrences?', 'str_replace_all');
+  pushMCQ('Which function in forcats reorders factor levels?', ['fct_reorder()', 'fct_relevel()', 'fct_infreq()', 'all of these'], 'all of these');
+  pushTyping('What function in forcats combines rare factor levels?', 'fct_lump');
+  pushMCQ('Which function in readr reads a CSV file?', ['read_csv()', 'read.csv()', 'read.delim()', 'read.table()'], 'read_csv()');
+  pushTyping('What function in readr reads a TSV file?', 'read_tsv');
+  pushMCQ('Which function in purrr maps a function over a list?', ['map()', 'map2()', 'pmap()', 'walk()'], 'map()');
+  pushTyping('What function in purrr maps over two lists?', 'map2');
+  pushMCQ('Which function in lubridate parses dates?', ['ymd()', 'mdy()', 'dmy()', 'all of these'], 'all of these');
+  pushTyping('What function in lubridate gets the year?', 'year');
+  pushMCQ('Which function in lubridate gets the month?', ['month()', 'day()', 'year()', 'week()'], 'month()');
+  pushTyping('What function in lubridate gets the day?', 'day');
+
+  const letters = ['A', 'B', 'C', 'D'] as const;
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  while (list.length < 200) {
+    const level = Math.floor(list.length / 4) + 1;
+    const idxInLevel = list.length % 4;
+    const tag = `R-L${pad2(level)}-${letters[idxInLevel]}`;
+    const code = `print("${tag}")`;
+    list.push({ type: 'fill-blank', question: `L${pad2(level)}: What does this R code print?`, code, answer: tag, explanation: '' });
+  }
+
+  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '').replace(/[().,;:[\]{}]/g, '');
+  const seenAnswers = new Set<string>();
+  for (let i = 0; i < list.length; i++) {
+    const a = list[i].answer ?? '';
+    const key = norm(a);
+    if (seenAnswers.has(key)) {
+      const level = Math.floor(i / 4) + 1;
+      const idxInLevel = i % 4;
+      const unique = `R-UNQ-L${pad2(level)}-${idxInLevel + 1}`;
+      list[i] = { type: 'fill-blank', question: `L${pad2(level)}: What does this R code print?`, code: `print("${unique}")`, answer: unique, explanation: '' };
+      seenAnswers.add(norm(unique));
+    } else {
+      seenAnswers.add(key);
+    }
+  }
+
+  for (let i = 0; i < list.length; i++) {
+    const level = Math.floor(i / 4) + 1;
+    if (!list[i].question.startsWith('L')) {
+      list[i].question = `L${pad2(level)}: ${list[i].question}`;
+    }
+  }
+
+  return list.slice(0, 200);
+})();
+
 export function getQuestionsForLevel(language: Language, level: number): Question[] {
   const start = (level - 1) * 4;
   const end = start + 4;
@@ -934,6 +1164,9 @@ export function getQuestionsForLevel(language: Language, level: number): Questio
   }
   if (language === 'cpp') {
     return CPP_QUESTIONS.slice(start, end);
+  }
+  if (language === 'r') {
+    return R_QUESTIONS.slice(start, end);
   }
   return JS_QUESTIONS.slice(start, end);
 }

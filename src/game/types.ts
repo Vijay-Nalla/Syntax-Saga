@@ -1,4 +1,4 @@
-export type Language = 'javascript' | 'python' | 'c' | 'cpp' | 'java';
+export type Language = 'javascript' | 'python' | 'c' | 'cpp' | 'java' | 'r';
 export type ControlMode = 'joystick' | 'button';
 
 export interface LanguageInfo {
@@ -133,6 +133,7 @@ export const LANGUAGES: LanguageInfo[] = [
   { id: 'c', name: 'C', color: 'hsl(150, 100%, 50%)', glowClass: 'neon-green', icon: 'C', description: 'The foundation of computing' },
   { id: 'cpp', name: 'C++', color: 'hsl(270, 100%, 65%)', glowClass: 'neon-purple', icon: 'C+', description: 'Power and performance' },
   { id: 'java', name: 'Java', color: 'hsl(25, 100%, 55%)', glowClass: 'neon-orange', icon: 'JV', description: 'Write once, run anywhere' },
+  { id: 'r', name: 'R', color: 'hsl(200, 100%, 50%)', glowClass: 'neon-blue', icon: 'R', description: 'Data science and stats' },
 ];
 
 export const HINT_COST = 10;
