@@ -1,21 +1,17 @@
 import { useEffect, useState } from 'react';
-import { GoogleLogin } from '@react-oauth/google';
-import { useToast } from './ui/use-toast';
 import { audioManager } from '@/game/audioManager';
 
 interface TitleScreenProps {
   onStart: () => void;
   onLeaderboard: () => void;
-  onGoogleSuccess?: (name: string) => void;
 }
 
 const STORY_TEXT = "One coder. Five realms. Crush the Bug King. Restore the Multiverse.";
 
-export default function TitleScreen({ onStart, onLeaderboard, onGoogleSuccess }: TitleScreenProps) {
+export default function TitleScreen({ onStart, onLeaderboard }: TitleScreenProps) {
   const [showStory, setShowStory] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [ready, setReady] = useState(false);
-  const { toast } = useToast();
 
   const handleStart = () => {
     audioManager.resumeContext();
@@ -40,38 +36,6 @@ export default function TitleScreen({ onStart, onLeaderboard, onGoogleSuccess }:
     }, 30);
     return () => clearInterval(interval);
   }, [showStory]);
-
-  const handleGoogleSuccess = (credentialResponse: { credential?: string }) => {
-    try {
-      // Decrypt the JWT token to get user info (simplified for demo)
-      const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
-      const name = payload.name || payload.given_name || 'Coder';
-      
-      toast({
-        title: "Welcome, " + name + "!",
-        description: "Successfully logged in with Google.",
-      });
-
-      if (onGoogleSuccess) {
-        onGoogleSuccess(name);
-      }
-    } catch (error) {
-      console.error("Failed to parse Google login response:", error);
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: "Could not retrieve user info from Google.",
-      });
-    }
-  };
-
-  const handleGoogleError = () => {
-    toast({
-      variant: "destructive",
-      title: "Google Login Failed",
-      description: "An error occurred during Google authentication.",
-    });
-  };
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col items-center justify-center overflow-hidden">
@@ -133,20 +97,6 @@ export default function TitleScreen({ onStart, onLeaderboard, onGoogleSuccess }:
             >
               PRESS START
             </button>
-            
-            <div 
-              className="mt-2 scale-90 sm:scale-100"
-              style={{ animation: 'fadeInUp 0.6s ease-out' }}
-            >
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                theme="filled_black"
-                shape="square"
-                text="signin_with"
-              />
-            </div>
-
             <button
               onClick={onLeaderboard}
               className="font-pixel text-[9px] px-6 py-2 border border-border text-muted-foreground

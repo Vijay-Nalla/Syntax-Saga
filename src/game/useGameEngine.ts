@@ -121,6 +121,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
   const cameraXRef = useRef(0);
   const animFrameRef = useRef(0);
   const screenRef = useRef<GameState['screen']>('title');
+  const lastGameScreenRef = useRef<'playing' | 'multiplayer-playing'>('playing');
   const levelQuestionsRef = useRef<Question[]>([]);
   const jumpCountRef = useRef(0);
   const questionTrackerRef = useRef(new QuestionTracker());
@@ -293,7 +294,8 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
 
   // ---- Pause / Resume ----
   const pauseGame = useCallback(() => {
-    if (screenRef.current === 'playing') {
+    if (screenRef.current === 'playing' || screenRef.current === 'multiplayer-playing') {
+      lastGameScreenRef.current = screenRef.current as 'playing' | 'multiplayer-playing';
       screenRef.current = 'paused';
       setGameState(prev => ({ ...prev, screen: 'paused', isPaused: true }));
     }
@@ -301,8 +303,8 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
 
   const resumeGame = useCallback(() => {
     if (screenRef.current === 'paused') {
-      screenRef.current = 'playing';
-      setGameState(prev => ({ ...prev, screen: 'playing', isPaused: false }));
+      screenRef.current = lastGameScreenRef.current;
+      setGameState(prev => ({ ...prev, screen: lastGameScreenRef.current, isPaused: false }));
     }
   }, []);
 
@@ -343,6 +345,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
   // ---- Answer question ----
   const answerQuestion = useCallback((correct: boolean) => {
     const p = playerRef.current;
+    const wasMultiplayer = screenRef.current === 'multiplayer-challenge';
     if (correct) {
       p.xp += 50;
       p.coins += 5;
@@ -359,11 +362,15 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       audioManager.wrongAnswer();
     }
     playerRef.current = p;
-    screenRef.current = p.health <= 0 ? 'game-over' : 'playing';
-    if (p.health <= 0) audioManager.gameOver();
+    if (p.health <= 0) {
+      screenRef.current = 'game-over';
+      audioManager.gameOver();
+    } else {
+      screenRef.current = wasMultiplayer ? 'multiplayer-playing' : 'playing';
+    }
     setGameState(prev => ({
       ...prev,
-      screen: p.health <= 0 ? 'game-over' : 'playing',
+      screen: screenRef.current,
       player: { ...p },
       currentQuestion: null,
     }));
@@ -424,7 +431,7 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     let jumpKeyWasDown = false;
 
     const loop = () => {
-      if (screenRef.current !== 'playing') {
+      if (screenRef.current !== 'playing' && screenRef.current !== 'multiplayer-playing') {
         animFrameRef.current = requestAnimationFrame(loop);
         return;
       }
@@ -623,8 +630,9 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
                 const qIndex = questionTrackerRef.current.next(questions);
                 const q = questions[qIndex % questions.length];
                 if (q) {
-                  screenRef.current = 'challenge';
-                  setGameState(prev => ({ ...prev, screen: 'challenge', currentQuestion: q, player: { ...p } }));
+                  const isMultiplayer = screenRef.current === 'multiplayer-playing';
+                  screenRef.current = isMultiplayer ? 'multiplayer-challenge' : 'challenge';
+                  setGameState(prev => ({ ...prev, screen: screenRef.current, currentQuestion: q, player: { ...p } }));
                 }
               }
             }

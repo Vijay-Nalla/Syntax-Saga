@@ -103,7 +103,7 @@ export interface PlayerState {
 }
 
 export interface GameState {
-  screen: 'title' | 'name-entry' | 'language-select' | 'leaderboard' | 'playing' | 'challenge' | 'game-over' | 'level-complete' | 'paused';
+  screen: 'title' | 'name-entry' | 'game-mode-select' | 'language-select' | 'leaderboard' | 'playing' | 'challenge' | 'game-over' | 'level-complete' | 'paused' | 'multiplayer-lobby' | 'multiplayer-matchmaking' | 'multiplayer-playing' | 'multiplayer-challenge' | 'post-match-report';
   player: PlayerState;
   currentLevel: number;
   currentQuestion: Question | null;
@@ -115,6 +115,45 @@ export interface GameState {
   controlMode: ControlMode;
   maxProgressX?: number;
   lockX?: number;
+  gameMode?: 'single' | 'multi';
+}
+
+// Multiplayer Types
+export interface RemotePlayerState extends PlayerState {
+  id: string;
+  isConnected: boolean;
+}
+
+export interface RoomState {
+  code: string;
+  hostId: string;
+  players: RemotePlayerState[];
+  isActive: boolean;
+}
+
+export interface PlayerPerformance {
+  topic: string;
+  accuracy: number;
+  avgResponseTime: number;
+  totalCorrect: number;
+  totalIncorrect: number;
+}
+
+export interface MatchStats {
+  player1: {
+    name: string;
+    score: number;
+    coins: number;
+    performance: PlayerPerformance[];
+    achievements: string[];
+  };
+  player2: {
+    name: string;
+    score: number;
+    coins: number;
+    performance: PlayerPerformance[];
+    achievements: string[];
+  };
 }
 
 export interface LeaderboardEntry {
