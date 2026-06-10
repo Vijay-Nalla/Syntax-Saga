@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import { PlayerState, GameState, Language, Question, Platform, EnemyType, ENEMY_CONFIG, PipeSpawn, EnemySpawn, ControlMode } from './types';
 import { getLevelData } from './levels';
 import { getQuestionsForLevel } from './questions';
-import { renderFrame } from './renderer';
+import { renderFrame, type RemoteAvatar } from './renderer';
 import { audioManager } from './audioManager';
 import { saveProgress, loadProgress, SavedProgress } from './saveManager';
 import { CoinSpawn } from './types';
