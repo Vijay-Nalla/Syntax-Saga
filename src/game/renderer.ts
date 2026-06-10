@@ -15,6 +15,13 @@ interface Terminal {
   x: number; y: number; questionIndex: number; used: boolean;
 }
 
+export interface RemoteAvatar {
+  x: number;
+  y: number;
+  facing: 'left' | 'right';
+  name: string;
+}
+
 export function renderFrame(
   ctx: CanvasRenderingContext2D,
   p: PlayerState,
@@ -26,6 +33,7 @@ export function renderFrame(
   pipes: PipeSpawn[],
   isUnderground: boolean,
   lockX: number = 0,
+  remotes: RemoteAvatar[] = [],
 ) {
   // Background
   ctx.fillStyle = isUnderground ? '#0a0800' : '#080c14';
@@ -253,6 +261,35 @@ export function renderFrame(
   ctx.fillRect(ppx + 6, py + ph - 10 + (p.isCrouching ? 0 : legAnim), 8, 10);
   ctx.fillRect(ppx + PLAYER_W - 14, py + ph - 10 - (p.isCrouching ? 0 : legAnim), 8, 10);
   ctx.restore();
+
+  // Remote players (multiplayer)
+  for (const r of remotes) {
+    const rx = r.x - cam;
+    if (rx < -50 || rx > VIEWPORT_W + 50) continue;
+    ctx.save();
+    ctx.shadowColor = '#ff6080';
+    ctx.shadowBlur = 12;
+    // Body - red/pink
+    ctx.fillStyle = '#dd5577';
+    ctx.fillRect(rx + 4, r.y + 8, PLAYER_W - 8, PLAYER_H - 16);
+    ctx.fillStyle = '#bb3355';
+    ctx.fillRect(rx + 6, r.y, PLAYER_W - 12, 14);
+    // Visor (blue accent)
+    ctx.fillStyle = '#66aaff';
+    const visorX = r.facing === 'right' ? rx + 14 : rx + 6;
+    ctx.fillRect(visorX, r.y + 4, 12, 5);
+    ctx.fillStyle = '#882244';
+    ctx.fillRect(rx + 6, r.y + PLAYER_H - 10, 8, 10);
+    ctx.fillRect(rx + PLAYER_W - 14, r.y + PLAYER_H - 10, 8, 10);
+    // Name tag
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ff99bb';
+    ctx.font = '8px "Press Start 2P"';
+    ctx.textAlign = 'center';
+    ctx.fillText(r.name.slice(0, 12), rx + PLAYER_W / 2, r.y - 8);
+    ctx.restore();
+  }
+
 
   // End gate - blue-red
   const CANVAS_W = 2400;

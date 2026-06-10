@@ -2,10 +2,18 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import { PlayerState, GameState, Language, Question, Platform, EnemyType, ENEMY_CONFIG, PipeSpawn, EnemySpawn, ControlMode } from './types';
 import { getLevelData } from './levels';
 import { getQuestionsForLevel } from './questions';
-import { renderFrame } from './renderer';
+import { renderFrame, type RemoteAvatar } from './renderer';
 import { audioManager } from './audioManager';
 import { saveProgress, loadProgress, SavedProgress } from './saveManager';
 import { CoinSpawn } from './types';
+import type { MultiplayerSession, RemotePos } from './multiplayerClient';
+
+export interface MultiplayerRefs {
+  sessionRef: React.MutableRefObject<MultiplayerSession | null>;
+  remoteRef: React.MutableRefObject<Map<string, RemotePos & { lastSeen: number }>>;
+  onChallengeBlocked?: (ownerName: string) => void;
+  onAnsweredInMatch?: (correct: boolean) => void;
+}
 
 // ---- Constants ----
 const GRAVITY = 0.6;
@@ -94,7 +102,7 @@ function createPlayer(name = 'Player'): PlayerState {
   };
 }
 
-export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
+export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | null>, mpRefs?: MultiplayerRefs) {
   const [gameState, setGameState] = useState<GameState>({
     screen: 'title',
     player: createPlayer(),
@@ -128,6 +136,13 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
   const isUndergroundRef = useRef(false);
   const startTimeRef = useRef(Date.now());
   const completedLevelsRef = useRef<number[]>([]);
+  // Multiplayer
+  const lastChallengeIdRef = useRef<number | null>(null);
+  const claimingTerminalRef = useRef<number | null>(null);
+  const posSendTickRef = useRef(0);
+  const challengesWonRef = useRef(0);
+  const correctRef = useRef(0);
+  const wrongRef = useRef(0);
 
   // Underground data refs
   const undergroundPlatformsRef = useRef<Platform[]>([]);
@@ -361,6 +376,32 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       p.health = Math.max(0, p.health - 15);
       audioManager.wrongAnswer();
     }
+
+    // Multiplayer: sync stats and complete the lock
+    if (wasMultiplayer && mpRefs?.sessionRef.current) {
+      const sess = mpRefs.sessionRef.current;
+      const chId = lastChallengeIdRef.current;
+      if (chId !== null) sess.completeChallenge(p.level, chId, correct);
+      if (correct) {
+        challengesWonRef.current += 1;
+        correctRef.current += 1;
+      } else {
+        wrongRef.current += 1;
+      }
+      // Score: base 100 correct + 50 first-access bonus (we always own the lock if we're here)
+      const score = correctRef.current * 150;
+      sess.updateStats({
+        score,
+        coins: p.coins,
+        challenges_won: challengesWonRef.current,
+        correct_answers: correctRef.current,
+        wrong_answers: wrongRef.current,
+      });
+      mpRefs.onAnsweredInMatch?.(correct);
+      claimingTerminalRef.current = null;
+      lastChallengeIdRef.current = null;
+    }
+
     playerRef.current = p;
     if (p.health <= 0) {
       screenRef.current = 'game-over';
@@ -374,7 +415,8 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       player: { ...p },
       currentQuestion: null,
     }));
-  }, []);
+  }, [mpRefs]);
+
 
   // ---- Use hint (deduct coins) ----
   const useHint = useCallback(() => {
@@ -624,15 +666,41 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
           if (!terminal.used && Math.abs(p.x + p.width / 2 - terminal.x) < 30 && Math.abs(p.y + p.height - terminal.y - 40) < 30) {
             isNearAnyTerminal = true;
             if (keys.has('e') || keys.has('Enter')) {
-              terminal.used = true;
-              const questions = levelQuestionsRef.current;
-              if (questions.length > 0) {
-                const qIndex = questionTrackerRef.current.next(questions);
-                const q = questions[qIndex % questions.length];
-                if (q) {
-                  const isMultiplayer = screenRef.current === 'multiplayer-playing';
-                  screenRef.current = isMultiplayer ? 'multiplayer-challenge' : 'challenge';
-                  setGameState(prev => ({ ...prev, screen: screenRef.current, currentQuestion: q, player: { ...p } }));
+              const mpSession = mpRefs?.sessionRef.current;
+              if (mpSession && screenRef.current === 'multiplayer-playing') {
+                // Multiplayer: race to claim. Mark used locally to avoid re-entry.
+                if (claimingTerminalRef.current !== terminal.questionIndex) {
+                  claimingTerminalRef.current = terminal.questionIndex;
+                  terminal.used = true;
+                  const lvl = playerRef.current.level;
+                  const qIdx = terminal.questionIndex;
+                  const questions = levelQuestionsRef.current;
+                  (async () => {
+                    const res = await mpSession.claimChallenge(lvl, qIdx, '');
+                    if (res.owned) {
+                      const idx = questionTrackerRef.current.next(questions);
+                      const q = questions[idx % questions.length];
+                      if (q) {
+                        lastChallengeIdRef.current = qIdx;
+                        screenRef.current = 'multiplayer-challenge';
+                        setGameState(prev => ({ ...prev, screen: 'multiplayer-challenge', currentQuestion: q, player: { ...playerRef.current } }));
+                      }
+                    } else {
+                      // Locked by other player — keep visually used and notify
+                      mpRefs?.onChallengeBlocked?.(res.ownerName || 'Opponent');
+                    }
+                  })();
+                }
+              } else {
+                terminal.used = true;
+                const questions = levelQuestionsRef.current;
+                if (questions.length > 0) {
+                  const qIndex = questionTrackerRef.current.next(questions);
+                  const q = questions[qIndex % questions.length];
+                  if (q) {
+                    screenRef.current = 'challenge';
+                    setGameState(prev => ({ ...prev, screen: 'challenge', currentQuestion: q, player: { ...p } }));
+                  }
                 }
               }
             }
@@ -640,13 +708,34 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
         }
       }
 
+      // Multiplayer: broadcast position ~10Hz
+      if (mpRefs?.sessionRef.current && screenRef.current === 'multiplayer-playing') {
+        posSendTickRef.current = (posSendTickRef.current + 1) % 6;
+        if (posSendTickRef.current === 0) {
+          mpRefs.sessionRef.current.sendPosition({
+            x: p.x, y: p.y, vx: p.vx, facing: p.facing,
+            isUnderground: isUndergroundRef.current,
+            level: p.level,
+          });
+        }
+      }
+
+
       // Level complete
       if (p.x > CANVAS_W - 100) {
         if (terminalsRef.current.every(t => t.used)) {
-          screenRef.current = 'level-complete';
-          audioManager.levelComplete();
-          persistProgress();
-          setGameState(prev => ({ ...prev, screen: 'level-complete', player: { ...p } }));
+          if (mpRefs?.sessionRef.current && screenRef.current === 'multiplayer-playing') {
+            // Multiplayer: mark finished and go to post-match
+            mpRefs.sessionRef.current.updateStats({ finished: true });
+            screenRef.current = 'post-match-report';
+            audioManager.levelComplete();
+            setGameState(prev => ({ ...prev, screen: 'post-match-report', player: { ...p } }));
+          } else {
+            screenRef.current = 'level-complete';
+            audioManager.levelComplete();
+            persistProgress();
+            setGameState(prev => ({ ...prev, screen: 'level-complete', player: { ...p } }));
+          }
         }
       }
 
@@ -666,11 +755,23 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
         cameraX: cameraXRef.current
       }));
 
+      // Build remote avatars list for renderer
+      const remoteAvatars: RemoteAvatar[] = [];
+      if (mpRefs?.remoteRef) {
+        const now2 = Date.now();
+        mpRefs.remoteRef.current.forEach(r => {
+          if (now2 - r.lastSeen < 5000 && r.isUnderground === isUndergroundRef.current) {
+            remoteAvatars.push({ x: r.x, y: r.y, facing: r.facing, name: r.name });
+          }
+        });
+      }
+
       // Render
       setGameState(prev => {
-        renderFrame(ctx, p, cameraXRef.current, platformsRef.current, coinsRef.current, enemiesRef.current, terminalsRef.current, pipesRef.current, isUndergroundRef.current, prev.lockX || 0);
+        renderFrame(ctx, p, cameraXRef.current, platformsRef.current, coinsRef.current, enemiesRef.current, terminalsRef.current, pipesRef.current, isUndergroundRef.current, prev.lockX || 0, remoteAvatars);
         return prev;
       });
+
 
       animFrameRef.current = requestAnimationFrame(loop);
     };
