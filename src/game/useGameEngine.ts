@@ -724,10 +724,18 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       // Level complete
       if (p.x > CANVAS_W - 100) {
         if (terminalsRef.current.every(t => t.used)) {
-          screenRef.current = 'level-complete';
-          audioManager.levelComplete();
-          persistProgress();
-          setGameState(prev => ({ ...prev, screen: 'level-complete', player: { ...p } }));
+          if (mpRefs?.sessionRef.current && screenRef.current === 'multiplayer-playing') {
+            // Multiplayer: mark finished and go to post-match
+            mpRefs.sessionRef.current.updateStats({ finished: true });
+            screenRef.current = 'post-match-report';
+            audioManager.levelComplete();
+            setGameState(prev => ({ ...prev, screen: 'post-match-report', player: { ...p } }));
+          } else {
+            screenRef.current = 'level-complete';
+            audioManager.levelComplete();
+            persistProgress();
+            setGameState(prev => ({ ...prev, screen: 'level-complete', player: { ...p } }));
+          }
         }
       }
 
@@ -747,11 +755,23 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
         cameraX: cameraXRef.current
       }));
 
+      // Build remote avatars list for renderer
+      const remoteAvatars: RemoteAvatar[] = [];
+      if (mpRefs?.remoteRef) {
+        const now2 = Date.now();
+        mpRefs.remoteRef.current.forEach(r => {
+          if (now2 - r.lastSeen < 5000 && r.isUnderground === isUndergroundRef.current) {
+            remoteAvatars.push({ x: r.x, y: r.y, facing: r.facing, name: r.name });
+          }
+        });
+      }
+
       // Render
       setGameState(prev => {
-        renderFrame(ctx, p, cameraXRef.current, platformsRef.current, coinsRef.current, enemiesRef.current, terminalsRef.current, pipesRef.current, isUndergroundRef.current, prev.lockX || 0);
+        renderFrame(ctx, p, cameraXRef.current, platformsRef.current, coinsRef.current, enemiesRef.current, terminalsRef.current, pipesRef.current, isUndergroundRef.current, prev.lockX || 0, remoteAvatars);
         return prev;
       });
+
 
       animFrameRef.current = requestAnimationFrame(loop);
     };
