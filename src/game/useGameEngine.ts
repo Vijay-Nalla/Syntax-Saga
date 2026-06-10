@@ -102,7 +102,7 @@ function createPlayer(name = 'Player'): PlayerState {
   };
 }
 
-export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
+export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | null>, mpRefs?: MultiplayerRefs) {
   const [gameState, setGameState] = useState<GameState>({
     screen: 'title',
     player: createPlayer(),
