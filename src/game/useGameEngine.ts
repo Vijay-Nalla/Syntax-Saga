@@ -136,6 +136,13 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
   const isUndergroundRef = useRef(false);
   const startTimeRef = useRef(Date.now());
   const completedLevelsRef = useRef<number[]>([]);
+  // Multiplayer
+  const lastChallengeIdRef = useRef<number | null>(null);
+  const claimingTerminalRef = useRef<number | null>(null);
+  const posSendTickRef = useRef(0);
+  const challengesWonRef = useRef(0);
+  const correctRef = useRef(0);
+  const wrongRef = useRef(0);
 
   // Underground data refs
   const undergroundPlatformsRef = useRef<Platform[]>([]);
