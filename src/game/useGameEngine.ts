@@ -6,6 +6,14 @@ import { renderFrame } from './renderer';
 import { audioManager } from './audioManager';
 import { saveProgress, loadProgress, SavedProgress } from './saveManager';
 import { CoinSpawn } from './types';
+import type { MultiplayerSession, RemotePos } from './multiplayerClient';
+
+export interface MultiplayerRefs {
+  sessionRef: React.MutableRefObject<MultiplayerSession | null>;
+  remoteRef: React.MutableRefObject<Map<string, RemotePos & { lastSeen: number }>>;
+  onChallengeBlocked?: (ownerName: string) => void;
+  onAnsweredInMatch?: (correct: boolean) => void;
+}
 
 // ---- Constants ----
 const GRAVITY = 0.6;
