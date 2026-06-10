@@ -376,6 +376,32 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       p.health = Math.max(0, p.health - 15);
       audioManager.wrongAnswer();
     }
+
+    // Multiplayer: sync stats and complete the lock
+    if (wasMultiplayer && mpRefs?.sessionRef.current) {
+      const sess = mpRefs.sessionRef.current;
+      const chId = lastChallengeIdRef.current;
+      if (chId !== null) sess.completeChallenge(p.level, chId, correct);
+      if (correct) {
+        challengesWonRef.current += 1;
+        correctRef.current += 1;
+      } else {
+        wrongRef.current += 1;
+      }
+      // Score: base 100 correct + 50 first-access bonus (we always own the lock if we're here)
+      const score = correctRef.current * 150;
+      sess.updateStats({
+        score,
+        coins: p.coins,
+        challenges_won: challengesWonRef.current,
+        correct_answers: correctRef.current,
+        wrong_answers: wrongRef.current,
+      });
+      mpRefs.onAnsweredInMatch?.(correct);
+      claimingTerminalRef.current = null;
+      lastChallengeIdRef.current = null;
+    }
+
     playerRef.current = p;
     if (p.health <= 0) {
       screenRef.current = 'game-over';
@@ -389,7 +415,8 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
       player: { ...p },
       currentQuestion: null,
     }));
-  }, []);
+  }, [mpRefs]);
+
 
   // ---- Use hint (deduct coins) ----
   const useHint = useCallback(() => {
