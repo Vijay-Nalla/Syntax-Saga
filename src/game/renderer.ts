@@ -15,6 +15,13 @@ interface Terminal {
   x: number; y: number; questionIndex: number; used: boolean;
 }
 
+export interface RemoteAvatar {
+  x: number;
+  y: number;
+  facing: 'left' | 'right';
+  name: string;
+}
+
 export function renderFrame(
   ctx: CanvasRenderingContext2D,
   p: PlayerState,
@@ -26,6 +33,7 @@ export function renderFrame(
   pipes: PipeSpawn[],
   isUnderground: boolean,
   lockX: number = 0,
+  remotes: RemoteAvatar[] = [],
 ) {
   // Background
   ctx.fillStyle = isUnderground ? '#0a0800' : '#080c14';
