@@ -639,21 +639,60 @@ export function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
           if (!terminal.used && Math.abs(p.x + p.width / 2 - terminal.x) < 30 && Math.abs(p.y + p.height - terminal.y - 40) < 30) {
             isNearAnyTerminal = true;
             if (keys.has('e') || keys.has('Enter')) {
-              terminal.used = true;
-              const questions = levelQuestionsRef.current;
-              if (questions.length > 0) {
-                const qIndex = questionTrackerRef.current.next(questions);
-                const q = questions[qIndex % questions.length];
-                if (q) {
-                  const isMultiplayer = screenRef.current === 'multiplayer-playing';
-                  screenRef.current = isMultiplayer ? 'multiplayer-challenge' : 'challenge';
-                  setGameState(prev => ({ ...prev, screen: screenRef.current, currentQuestion: q, player: { ...p } }));
+              const mpSession = mpRefs?.sessionRef.current;
+              if (mpSession && screenRef.current === 'multiplayer-playing') {
+                // Multiplayer: race to claim. Mark used locally to avoid re-entry.
+                if (claimingTerminalRef.current !== terminal.questionIndex) {
+                  claimingTerminalRef.current = terminal.questionIndex;
+                  terminal.used = true;
+                  const lvl = playerRef.current.level;
+                  const qIdx = terminal.questionIndex;
+                  const questions = levelQuestionsRef.current;
+                  (async () => {
+                    const res = await mpSession.claimChallenge(lvl, qIdx, '');
+                    if (res.owned) {
+                      const idx = questionTrackerRef.current.next(questions);
+                      const q = questions[idx % questions.length];
+                      if (q) {
+                        lastChallengeIdRef.current = qIdx;
+                        screenRef.current = 'multiplayer-challenge';
+                        setGameState(prev => ({ ...prev, screen: 'multiplayer-challenge', currentQuestion: q, player: { ...playerRef.current } }));
+                      }
+                    } else {
+                      // Locked by other player — keep visually used and notify
+                      mpRefs?.onChallengeBlocked?.(res.ownerName || 'Opponent');
+                    }
+                  })();
+                }
+              } else {
+                terminal.used = true;
+                const questions = levelQuestionsRef.current;
+                if (questions.length > 0) {
+                  const qIndex = questionTrackerRef.current.next(questions);
+                  const q = questions[qIndex % questions.length];
+                  if (q) {
+                    screenRef.current = 'challenge';
+                    setGameState(prev => ({ ...prev, screen: 'challenge', currentQuestion: q, player: { ...p } }));
+                  }
                 }
               }
             }
           }
         }
       }
+
+      // Multiplayer: broadcast position ~10Hz
+      if (mpRefs?.sessionRef.current && screenRef.current === 'multiplayer-playing') {
+        posSendTickRef.current = (posSendTickRef.current + 1) % 6;
+        if (posSendTickRef.current === 0) {
+          mpRefs.sessionRef.current.sendPosition({
+            x: p.x, y: p.y, vx: p.vx, facing: p.facing,
+            isUnderground: isUndergroundRef.current,
+            level: p.level,
+          });
+        }
+      }
+
 
       // Level complete
       if (p.x > CANVAS_W - 100) {
