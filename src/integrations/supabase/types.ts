@@ -14,7 +14,136 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      mp_challenge_locks: {
+        Row: {
+          challenge_id: number
+          created_at: string
+          id: number
+          level: number
+          owner_id: string
+          owner_name: string
+          room_code: string
+          solved_correctly: boolean | null
+          status: string
+          topic: string | null
+        }
+        Insert: {
+          challenge_id: number
+          created_at?: string
+          id?: number
+          level: number
+          owner_id: string
+          owner_name: string
+          room_code: string
+          solved_correctly?: boolean | null
+          status?: string
+          topic?: string | null
+        }
+        Update: {
+          challenge_id?: number
+          created_at?: string
+          id?: number
+          level?: number
+          owner_id?: string
+          owner_name?: string
+          room_code?: string
+          solved_correctly?: boolean | null
+          status?: string
+          topic?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mp_challenge_locks_room_code_fkey"
+            columns: ["room_code"]
+            isOneToOne: false
+            referencedRelation: "mp_rooms"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      mp_room_players: {
+        Row: {
+          challenges_won: number
+          coins: number
+          correct_answers: number
+          finished: boolean
+          is_host: boolean
+          joined_at: string
+          last_seen: string
+          name: string
+          ready: boolean
+          room_code: string
+          score: number
+          user_id: string
+          wrong_answers: number
+        }
+        Insert: {
+          challenges_won?: number
+          coins?: number
+          correct_answers?: number
+          finished?: boolean
+          is_host?: boolean
+          joined_at?: string
+          last_seen?: string
+          name: string
+          ready?: boolean
+          room_code: string
+          score?: number
+          user_id: string
+          wrong_answers?: number
+        }
+        Update: {
+          challenges_won?: number
+          coins?: number
+          correct_answers?: number
+          finished?: boolean
+          is_host?: boolean
+          joined_at?: string
+          last_seen?: string
+          name?: string
+          ready?: boolean
+          room_code?: string
+          score?: number
+          user_id?: string
+          wrong_answers?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mp_room_players_room_code_fkey"
+            columns: ["room_code"]
+            isOneToOne: false
+            referencedRelation: "mp_rooms"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      mp_rooms: {
+        Row: {
+          code: string
+          created_at: string
+          host_id: string
+          language: string
+          level: number
+          status: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          host_id: string
+          language?: string
+          level?: number
+          status?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          host_id?: string
+          language?: string
+          level?: number
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
