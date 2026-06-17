@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements_unlocked: {
+        Row: {
+          achievement_id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      level_results: {
+        Row: {
+          accuracy: number
+          attempts: number
+          best_score: number
+          best_time_ms: number | null
+          language: string
+          level: number
+          stars: number
+          updated_at: string
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          accuracy?: number
+          attempts?: number
+          best_score?: number
+          best_time_ms?: number | null
+          language: string
+          level: number
+          stars?: number
+          updated_at?: string
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          accuracy?: number
+          attempts?: number
+          best_score?: number
+          best_time_ms?: number | null
+          language?: string
+          level?: number
+          stars?: number
+          updated_at?: string
+          user_id?: string
+          wins?: number
+        }
+        Relationships: []
+      }
       mp_challenge_locks: {
         Row: {
           challenge_id: number
@@ -141,6 +198,102 @@ export type Database = {
           language?: string
           level?: number
           status?: string
+        }
+        Relationships: []
+      }
+      player_progress: {
+        Row: {
+          coins: number
+          current_level: number
+          language: string
+          total_stars: number
+          unlocked_level: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          coins?: number
+          current_level?: number
+          language: string
+          total_stars?: number
+          unlocked_level?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          coins?: number
+          current_level?: number
+          language?: string
+          total_stars?: number
+          unlocked_level?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      player_stats: {
+        Row: {
+          challenges_solved: number
+          fastest_time_ms: number | null
+          languages_played: Json
+          levels_completed: number
+          mp_wins: number
+          total_play_time_s: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          challenges_solved?: number
+          fastest_time_ms?: number | null
+          languages_played?: Json
+          levels_completed?: number
+          mp_wins?: number
+          total_play_time_s?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          challenges_solved?: number
+          fastest_time_ms?: number | null
+          languages_played?: Json
+          levels_completed?: number
+          mp_wins?: number
+          total_play_time_s?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar: string | null
+          created_at: string
+          last_login: string
+          login_streak: number
+          recovery_email: string | null
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          avatar?: string | null
+          created_at?: string
+          last_login?: string
+          login_streak?: number
+          recovery_email?: string | null
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          avatar?: string | null
+          created_at?: string
+          last_login?: string
+          login_streak?: number
+          recovery_email?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string
         }
         Relationships: []
       }
