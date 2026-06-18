@@ -32,6 +32,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_rewards_log: {
+        Row: {
+          claim_date: string
+          created_at: string
+          day_in_streak: number
+          reward_kind: string
+          reward_value: number
+          user_id: string
+        }
+        Insert: {
+          claim_date: string
+          created_at?: string
+          day_in_streak: number
+          reward_kind: string
+          reward_value?: number
+          user_id: string
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          day_in_streak?: number
+          reward_kind?: string
+          reward_value?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       level_results: {
         Row: {
           accuracy: number
@@ -123,14 +150,17 @@ export type Database = {
           challenges_won: number
           coins: number
           correct_answers: number
+          device_id: string | null
           finished: boolean
           is_host: boolean
           joined_at: string
+          last_activity: string
           last_seen: string
           name: string
           ready: boolean
           room_code: string
           score: number
+          session_token: string
           user_id: string
           wrong_answers: number
         }
@@ -138,14 +168,17 @@ export type Database = {
           challenges_won?: number
           coins?: number
           correct_answers?: number
+          device_id?: string | null
           finished?: boolean
           is_host?: boolean
           joined_at?: string
+          last_activity?: string
           last_seen?: string
           name: string
           ready?: boolean
           room_code: string
           score?: number
+          session_token?: string
           user_id: string
           wrong_answers?: number
         }
@@ -153,14 +186,17 @@ export type Database = {
           challenges_won?: number
           coins?: number
           correct_answers?: number
+          device_id?: string | null
           finished?: boolean
           is_host?: boolean
           joined_at?: string
+          last_activity?: string
           last_seen?: string
           name?: string
           ready?: boolean
           room_code?: string
           score?: number
+          session_token?: string
           user_id?: string
           wrong_answers?: number
         }
@@ -178,25 +214,31 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          expires_at: string
           host_id: string
           language: string
           level: number
+          session_token: string
           status: string
         }
         Insert: {
           code: string
           created_at?: string
+          expires_at?: string
           host_id: string
           language?: string
           level?: number
+          session_token?: string
           status?: string
         }
         Update: {
           code?: string
           created_at?: string
+          expires_at?: string
           host_id?: string
           language?: string
           level?: number
+          session_token?: string
           status?: string
         }
         Relationships: []
@@ -233,32 +275,47 @@ export type Database = {
       }
       player_stats: {
         Row: {
+          best_accuracy: number
           challenges_solved: number
           fastest_time_ms: number | null
           languages_played: Json
           levels_completed: number
+          longest_session_s: number
           mp_wins: number
+          total_coins: number
+          total_correct: number
           total_play_time_s: number
+          total_wrong: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          best_accuracy?: number
           challenges_solved?: number
           fastest_time_ms?: number | null
           languages_played?: Json
           levels_completed?: number
+          longest_session_s?: number
           mp_wins?: number
+          total_coins?: number
+          total_correct?: number
           total_play_time_s?: number
+          total_wrong?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          best_accuracy?: number
           challenges_solved?: number
           fastest_time_ms?: number | null
           languages_played?: Json
           levels_completed?: number
+          longest_session_s?: number
           mp_wins?: number
+          total_coins?: number
+          total_correct?: number
           total_play_time_s?: number
+          total_wrong?: number
           updated_at?: string
           user_id?: string
         }
@@ -269,8 +326,10 @@ export type Database = {
           avatar: string | null
           created_at: string
           last_login: string
+          last_reward_claim: string | null
           login_streak: number
           recovery_email: string | null
+          streak_freeze_tokens: number
           updated_at: string
           user_id: string
           username: string
@@ -279,8 +338,10 @@ export type Database = {
           avatar?: string | null
           created_at?: string
           last_login?: string
+          last_reward_claim?: string | null
           login_streak?: number
           recovery_email?: string | null
+          streak_freeze_tokens?: number
           updated_at?: string
           user_id: string
           username: string
@@ -289,11 +350,67 @@ export type Database = {
           avatar?: string | null
           created_at?: string
           last_login?: string
+          last_reward_claim?: string | null
           login_streak?: number
           recovery_email?: string | null
+          streak_freeze_tokens?: number
           updated_at?: string
           user_id?: string
           username?: string
+        }
+        Relationships: []
+      }
+      progress_events: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          language: string | null
+          level: number | null
+          payload: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          language?: string | null
+          level?: number | null
+          payload?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          language?: string | null
+          level?: number | null
+          payload?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      save_backups: {
+        Row: {
+          created_at: string
+          id: string
+          snapshot: Json
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          snapshot: Json
+          source: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          snapshot?: Json
+          source?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -302,7 +419,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_daily_reward: { Args: never; Returns: Json }
+      mp_award_points: {
+        Args: {
+          _challenge_win: boolean
+          _coin_delta: number
+          _correct_delta: number
+          _room: string
+          _score_delta: number
+          _token: string
+        }
+        Returns: Json
+      }
+      mp_is_member: {
+        Args: { _room: string; _token: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

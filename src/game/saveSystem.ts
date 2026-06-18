@@ -1,9 +1,10 @@
 // Unified save layer: Supabase (logged-in) OR localStorage (guest).
-// Additive — does NOT modify the engine. Engine continues to use its own
-// saveManager.ts; this layer mirrors progress for the account/cloud system.
+// Cloud writes are routed through a sync queue so they survive offline.
 
 import { supabase } from '@/integrations/supabase/client';
 import { Language } from './types';
+import { enqueue, isOnline } from './syncQueue';
+import { emitEvent } from './analytics';
 
 const GUEST_ID_KEY = 'syntaxsaga:guestId';
 const GUEST_DATA_KEY = 'syntaxsaga:guest:data';
@@ -159,46 +160,62 @@ export async function saveLevelResult(r: LevelResult): Promise<void> {
     writeGuest(g);
     return;
   }
-  // Cloud upsert
-  const { data: existingRow } = await supabase
-    .from('level_results').select('*')
-    .eq('user_id', uid).eq('language', r.language).eq('level', r.level).maybeSingle();
-  const stars = Math.max((existingRow as any)?.stars ?? 0, r.stars);
-  const best_score = Math.max((existingRow as any)?.best_score ?? 0, r.score);
-  const best_time_ms = (existingRow as any)?.best_time_ms == null
-    ? r.timeMs : Math.min((existingRow as any).best_time_ms, r.timeMs);
-  const attempts = ((existingRow as any)?.attempts ?? 0) + 1;
-  const wins = ((existingRow as any)?.wins ?? 0) + (r.stars > 0 ? 1 : 0);
-  const accuracy = Math.round((r.correctAnswers / Math.max(1, r.correctAnswers + r.mistakes)) * 100);
-  await supabase.from('level_results').upsert({
+  // Cloud upsert — queued if offline or fails
+  const lvlRow = {
     user_id: uid, language: r.language, level: r.level,
-    stars, best_score, best_time_ms, attempts, wins, accuracy,
-  }, { onConflict: 'user_id,language,level' });
+    stars: r.stars, best_score: r.score, best_time_ms: r.timeMs,
+    attempts: 1, wins: r.stars > 0 ? 1 : 0,
+    accuracy: Math.round((r.correctAnswers / Math.max(1, r.correctAnswers + r.mistakes)) * 100),
+  };
 
-  // Refresh totals for the language
-  const { data: rows } = await supabase
-    .from('level_results').select('stars').eq('user_id', uid).eq('language', r.language);
-  const totalStars = (rows || []).reduce((s: number, x: any) => s + (x.stars || 0), 0);
+  if (!isOnline()) {
+    enqueue({ kind: 'level_result', payload: lvlRow });
+  } else {
+    try {
+      const { data: existingRow } = await supabase
+        .from('level_results').select('*')
+        .eq('user_id', uid).eq('language', r.language).eq('level', r.level).maybeSingle();
+      const stars = Math.max((existingRow as any)?.stars ?? 0, r.stars);
+      const best_score = Math.max((existingRow as any)?.best_score ?? 0, r.score);
+      const best_time_ms = (existingRow as any)?.best_time_ms == null
+        ? r.timeMs : Math.min((existingRow as any).best_time_ms, r.timeMs);
+      const attempts = ((existingRow as any)?.attempts ?? 0) + 1;
+      const wins = ((existingRow as any)?.wins ?? 0) + (r.stars > 0 ? 1 : 0);
+      const accuracy = Math.round((r.correctAnswers / Math.max(1, r.correctAnswers + r.mistakes)) * 100);
+      const { error } = await supabase.from('level_results').upsert({
+        user_id: uid, language: r.language, level: r.level,
+        stars, best_score, best_time_ms, attempts, wins, accuracy,
+      }, { onConflict: 'user_id,language,level' });
+      if (error) throw error;
 
-  const { data: ppExisting } = await supabase
-    .from('player_progress').select('*').eq('user_id', uid).eq('language', r.language).maybeSingle();
-  const cur = Math.max((ppExisting as any)?.current_level ?? 1, r.level);
-  const unl = Math.max((ppExisting as any)?.unlocked_level ?? 1, r.level + 1);
-  await supabase.from('player_progress').upsert({
-    user_id: uid, language: r.language, current_level: cur,
-    unlocked_level: Math.min(50, unl), total_stars: totalStars,
-    coins: (ppExisting as any)?.coins ?? 0,
-  }, { onConflict: 'user_id,language' });
+      const { data: rows } = await supabase
+        .from('level_results').select('stars').eq('user_id', uid).eq('language', r.language);
+      const totalStars = (rows || []).reduce((s: number, x: any) => s + (x.stars || 0), 0);
+      const { data: ppExisting } = await supabase
+        .from('player_progress').select('*').eq('user_id', uid).eq('language', r.language).maybeSingle();
+      const cur = Math.max((ppExisting as any)?.current_level ?? 1, r.level);
+      const unl = Math.max((ppExisting as any)?.unlocked_level ?? 1, r.level + 1);
+      await supabase.from('player_progress').upsert({
+        user_id: uid, language: r.language, current_level: cur,
+        unlocked_level: Math.min(50, unl), total_stars: totalStars,
+        coins: (ppExisting as any)?.coins ?? 0,
+      }, { onConflict: 'user_id,language' });
 
-  // Stats
-  const { data: stats } = await supabase.from('player_stats').select('*').eq('user_id', uid).maybeSingle();
-  await supabase.from('player_stats').upsert({
-    user_id: uid,
-    levels_completed: ((stats as any)?.levels_completed ?? 0) + 1,
-    challenges_solved: ((stats as any)?.challenges_solved ?? 0) + r.correctAnswers,
-    total_play_time_s: ((stats as any)?.total_play_time_s ?? 0) + Math.round(r.timeMs / 1000),
-    mp_wins: (stats as any)?.mp_wins ?? 0,
-  }, { onConflict: 'user_id' });
+      const { data: stats } = await supabase.from('player_stats').select('*').eq('user_id', uid).maybeSingle();
+      await supabase.from('player_stats').upsert({
+        user_id: uid,
+        levels_completed: ((stats as any)?.levels_completed ?? 0) + 1,
+        challenges_solved: ((stats as any)?.challenges_solved ?? 0) + r.correctAnswers,
+        total_play_time_s: ((stats as any)?.total_play_time_s ?? 0) + Math.round(r.timeMs / 1000),
+        mp_wins: (stats as any)?.mp_wins ?? 0,
+        total_correct: ((stats as any)?.total_correct ?? 0) + r.correctAnswers,
+        total_wrong: ((stats as any)?.total_wrong ?? 0) + r.mistakes,
+      }, { onConflict: 'user_id' });
+    } catch {
+      enqueue({ kind: 'level_result', payload: lvlRow });
+    }
+  }
+  emitEvent({ kind: 'level_completed', language: r.language, level: r.level, payload: { stars: r.stars, score: r.score } }).catch(() => {});
 }
 
 export async function unlockAchievement(id: string): Promise<void> {
@@ -208,7 +225,14 @@ export async function unlockAchievement(id: string): Promise<void> {
     if (!g.achievements.includes(id)) { g.achievements.push(id); writeGuest(g); }
     return;
   }
-  await supabase.from('achievements_unlocked').upsert({ user_id: uid, achievement_id: id }, { onConflict: 'user_id,achievement_id' });
+  const row = { user_id: uid, achievement_id: id };
+  try {
+    const { error } = await supabase.from('achievements_unlocked').upsert(row, { onConflict: 'user_id,achievement_id' });
+    if (error) throw error;
+  } catch {
+    enqueue({ kind: 'achievement', payload: row });
+  }
+  emitEvent({ kind: 'achievement_unlocked', payload: { id } }).catch(() => {});
 }
 
 // ---------- Guest → Account migration ----------

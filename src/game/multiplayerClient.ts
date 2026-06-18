@@ -14,6 +14,26 @@ export function getUserId(): string {
   return id;
 }
 
+// Per-room session token for security (server validates membership via this).
+function tokenKey(room: string) { return `mp_session:${room}`; }
+function getOrMakeSessionToken(room: string): string {
+  let t = sessionStorage.getItem(tokenKey(room));
+  if (!t) {
+    t = (crypto as any).randomUUID ? (crypto as any).randomUUID()
+      : 'tok_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem(tokenKey(room), t);
+  }
+  return t;
+}
+function getDeviceId(): string {
+  let d = localStorage.getItem('mp_device_id');
+  if (!d) {
+    d = (crypto as any).randomUUID ? (crypto as any).randomUUID() : 'dev_' + Math.random().toString(36).slice(2);
+    localStorage.setItem('mp_device_id', d);
+  }
+  return d;
+}
+
 export function generateRoomCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let r = '';
@@ -69,11 +89,14 @@ export class MultiplayerSession {
   private lockListeners = new Set<Listener<{ level: number; challenge_id: number; owner_id: string; owner_name: string }>>();
   private heartbeatTimer: number | null = null;
 
+  sessionToken: string = '';
+
   constructor(roomCode: string, isHost: boolean, name: string) {
     this.userId = getUserId();
     this.roomCode = roomCode;
     this.isHost = isHost;
     this.name = name;
+    this.sessionToken = getOrMakeSessionToken(roomCode);
   }
 
   async createRoom(language: Language): Promise<{ error: string | null }> {
@@ -94,7 +117,10 @@ export class MultiplayerSession {
       .from('mp_rooms').select('*').eq('code', this.roomCode).maybeSingle();
     if (error) return { error: error.message };
     if (!room) return { error: 'Room not found.' };
-    if (room.status === 'finished') return { error: 'This match has ended.' };
+    if ((room as any).status === 'finished') return { error: 'This match has ended.' };
+    if ((room as any).expires_at && new Date((room as any).expires_at).getTime() < Date.now()) {
+      return { error: 'This room has expired.' };
+    }
     const { count } = await supabase
       .from('mp_room_players').select('*', { count: 'exact', head: true }).eq('room_code', this.roomCode);
     if ((count ?? 0) >= 2) {
@@ -113,8 +139,11 @@ export class MultiplayerSession {
       name: this.name,
       is_host: isHost,
       ready: false,
+      session_token: this.sessionToken,
+      device_id: getDeviceId(),
       last_seen: new Date().toISOString(),
-    }, { onConflict: 'room_code,user_id' });
+      last_activity: new Date().toISOString(),
+    } as any, { onConflict: 'room_code,user_id' });
   }
 
   subscribe() {
@@ -210,8 +239,41 @@ export class MultiplayerSession {
   }
 
   async updateStats(patch: Partial<Pick<PlayerRow, 'score' | 'coins' | 'challenges_won' | 'correct_answers' | 'wrong_answers' | 'finished'>>) {
-    await supabase.from('mp_room_players').update(patch)
-      .eq('room_code', this.roomCode).eq('user_id', this.userId);
+    // Score-bearing fields go through server-authoritative RPC (validates token, clamps deltas).
+    const scoreDelta = (patch.score as number | undefined);
+    const winDelta = (patch.challenges_won as number | undefined);
+    const correctDelta = (patch.correct_answers as number | undefined);
+    const coinDelta = (patch.coins as number | undefined);
+    const hasScoreChange =
+      scoreDelta !== undefined || winDelta !== undefined ||
+      correctDelta !== undefined || coinDelta !== undefined;
+    if (hasScoreChange) {
+      try {
+        // patch is expected to be deltas — treat values as additive when small, otherwise diff against latest known
+        const { data: cur } = await supabase.from('mp_room_players')
+          .select('score, coins, challenges_won, correct_answers')
+          .eq('room_code', this.roomCode).eq('user_id', this.userId).maybeSingle();
+        const c = cur as any || { score: 0, coins: 0, challenges_won: 0, correct_answers: 0 };
+        const sd = scoreDelta !== undefined ? Math.max(0, scoreDelta - c.score) : 0;
+        const wd = winDelta !== undefined ? (winDelta > c.challenges_won) : false;
+        const cd = correctDelta !== undefined ? Math.max(0, correctDelta - c.correct_answers) : 0;
+        const cod = coinDelta !== undefined ? Math.max(0, coinDelta - c.coins) : 0;
+        await supabase.rpc('mp_award_points', {
+          _room: this.roomCode, _token: this.sessionToken,
+          _score_delta: sd, _challenge_win: wd, _correct_delta: cd, _coin_delta: cod,
+        });
+      } catch {
+        // fall back to direct update; trigger still clamps
+      }
+    }
+    const safe: any = { ...patch };
+    delete safe.score; delete safe.challenges_won; delete safe.correct_answers; delete safe.coins;
+    if (patch.wrong_answers !== undefined) safe.wrong_answers = patch.wrong_answers;
+    if (patch.finished !== undefined) safe.finished = patch.finished;
+    if (Object.keys(safe).length > 0) {
+      await supabase.from('mp_room_players').update(safe)
+        .eq('room_code', this.roomCode).eq('user_id', this.userId);
+    }
   }
 
   async leave() {

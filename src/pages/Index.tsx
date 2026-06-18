@@ -26,6 +26,7 @@ import AuthSignup from '@/components/AuthSignup';
 import ForgotPassword from '@/components/ForgotPassword';
 import PlayerDashboard from '@/components/PlayerDashboard';
 import LevelSelectMap from '@/components/LevelSelectMap';
+import CloudStatusBadge from '@/components/CloudStatusBadge';
 import { useAuth } from '@/hooks/useAuth';
 import { getGuestId, getOrCreateGuestId, saveLevelResult, unlockAchievement, getDashboard } from '@/game/saveSystem';
 import { calcStars } from '@/game/starCalc';
@@ -494,6 +495,7 @@ const Index = () => {
           playTime={getPlayTime()}
         />
       )}
+      <CloudStatusBadge />
     </div>
   );
 };
