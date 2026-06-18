@@ -14,6 +14,26 @@ export function getUserId(): string {
   return id;
 }
 
+// Per-room session token for security (server validates membership via this).
+function tokenKey(room: string) { return `mp_session:${room}`; }
+function getOrMakeSessionToken(room: string): string {
+  let t = sessionStorage.getItem(tokenKey(room));
+  if (!t) {
+    t = (crypto as any).randomUUID ? (crypto as any).randomUUID()
+      : 'tok_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem(tokenKey(room), t);
+  }
+  return t;
+}
+function getDeviceId(): string {
+  let d = localStorage.getItem('mp_device_id');
+  if (!d) {
+    d = (crypto as any).randomUUID ? (crypto as any).randomUUID() : 'dev_' + Math.random().toString(36).slice(2);
+    localStorage.setItem('mp_device_id', d);
+  }
+  return d;
+}
+
 export function generateRoomCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let r = '';
@@ -69,11 +89,14 @@ export class MultiplayerSession {
   private lockListeners = new Set<Listener<{ level: number; challenge_id: number; owner_id: string; owner_name: string }>>();
   private heartbeatTimer: number | null = null;
 
+  sessionToken: string = '';
+
   constructor(roomCode: string, isHost: boolean, name: string) {
     this.userId = getUserId();
     this.roomCode = roomCode;
     this.isHost = isHost;
     this.name = name;
+    this.sessionToken = getOrMakeSessionToken(roomCode);
   }
 
   async createRoom(language: Language): Promise<{ error: string | null }> {
@@ -94,7 +117,10 @@ export class MultiplayerSession {
       .from('mp_rooms').select('*').eq('code', this.roomCode).maybeSingle();
     if (error) return { error: error.message };
     if (!room) return { error: 'Room not found.' };
-    if (room.status === 'finished') return { error: 'This match has ended.' };
+    if ((room as any).status === 'finished') return { error: 'This match has ended.' };
+    if ((room as any).expires_at && new Date((room as any).expires_at).getTime() < Date.now()) {
+      return { error: 'This room has expired.' };
+    }
     const { count } = await supabase
       .from('mp_room_players').select('*', { count: 'exact', head: true }).eq('room_code', this.roomCode);
     if ((count ?? 0) >= 2) {
@@ -113,8 +139,11 @@ export class MultiplayerSession {
       name: this.name,
       is_host: isHost,
       ready: false,
+      session_token: this.sessionToken,
+      device_id: getDeviceId(),
       last_seen: new Date().toISOString(),
-    }, { onConflict: 'room_code,user_id' });
+      last_activity: new Date().toISOString(),
+    } as any, { onConflict: 'room_code,user_id' });
   }
 
   subscribe() {
