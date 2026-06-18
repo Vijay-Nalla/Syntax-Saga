@@ -239,8 +239,41 @@ export class MultiplayerSession {
   }
 
   async updateStats(patch: Partial<Pick<PlayerRow, 'score' | 'coins' | 'challenges_won' | 'correct_answers' | 'wrong_answers' | 'finished'>>) {
-    await supabase.from('mp_room_players').update(patch)
-      .eq('room_code', this.roomCode).eq('user_id', this.userId);
+    // Score-bearing fields go through server-authoritative RPC (validates token, clamps deltas).
+    const scoreDelta = (patch.score as number | undefined);
+    const winDelta = (patch.challenges_won as number | undefined);
+    const correctDelta = (patch.correct_answers as number | undefined);
+    const coinDelta = (patch.coins as number | undefined);
+    const hasScoreChange =
+      scoreDelta !== undefined || winDelta !== undefined ||
+      correctDelta !== undefined || coinDelta !== undefined;
+    if (hasScoreChange) {
+      try {
+        // patch is expected to be deltas — treat values as additive when small, otherwise diff against latest known
+        const { data: cur } = await supabase.from('mp_room_players')
+          .select('score, coins, challenges_won, correct_answers')
+          .eq('room_code', this.roomCode).eq('user_id', this.userId).maybeSingle();
+        const c = cur as any || { score: 0, coins: 0, challenges_won: 0, correct_answers: 0 };
+        const sd = scoreDelta !== undefined ? Math.max(0, scoreDelta - c.score) : 0;
+        const wd = winDelta !== undefined ? (winDelta > c.challenges_won) : false;
+        const cd = correctDelta !== undefined ? Math.max(0, correctDelta - c.correct_answers) : 0;
+        const cod = coinDelta !== undefined ? Math.max(0, coinDelta - c.coins) : 0;
+        await supabase.rpc('mp_award_points', {
+          _room: this.roomCode, _token: this.sessionToken,
+          _score_delta: sd, _challenge_win: wd, _correct_delta: cd, _coin_delta: cod,
+        });
+      } catch {
+        // fall back to direct update; trigger still clamps
+      }
+    }
+    const safe: any = { ...patch };
+    delete safe.score; delete safe.challenges_won; delete safe.correct_answers; delete safe.coins;
+    if (patch.wrong_answers !== undefined) safe.wrong_answers = patch.wrong_answers;
+    if (patch.finished !== undefined) safe.finished = patch.finished;
+    if (Object.keys(safe).length > 0) {
+      await supabase.from('mp_room_players').update(safe)
+        .eq('room_code', this.roomCode).eq('user_id', this.userId);
+    }
   }
 
   async leave() {
