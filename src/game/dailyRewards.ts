@@ -52,7 +52,7 @@ export async function getRewardState(): Promise<RewardState | null> {
 export async function claimReward(): Promise<RewardClaim> {
   const { data, error } = await supabase.rpc('claim_daily_reward');
   if (error) return { claimed: false, reason: error.message };
-  return data as RewardClaim;
+  return data as unknown as RewardClaim;
 }
 
 export interface LadderEntry { day: number; kind: string; value: number; label: string; }
