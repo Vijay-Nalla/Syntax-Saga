@@ -498,6 +498,13 @@ const Index = () => {
         />
       )}
       <CloudStatusBadge />
+      <GameRecoveryOverlay
+        onRetry={() => {
+          // Re-trigger engine boot for current language/level if engine seems stuck.
+          try { startGame(gameState.player.language || selectedLang, playerNameLocal); } catch {}
+        }}
+        onReturnHome={handleEngineHome}
+      />
     </div>
   );
 };
