@@ -46,9 +46,12 @@ export default function PlayerDashboard({ onPlay, onSelectLanguage, onMultiplaye
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'OVERVIEW' },
+    { id: 'learning', label: 'LEARNING' },
     { id: 'languages', label: 'LANGUAGES' },
     { id: 'history', label: 'HISTORY' },
     { id: 'graphs', label: 'GRAPHS' },
+    { id: 'sync', label: 'SYNC' },
+    { id: 'rewards', label: 'REWARDS' },
     ...(user ? [{ id: 'backups' as Tab, label: 'BACKUPS' }] : []),
   ];
 
