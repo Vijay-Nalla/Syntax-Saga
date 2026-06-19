@@ -59,6 +59,39 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_recommendations: {
+        Row: {
+          coach_note: string | null
+          confidence_gain: number | null
+          est_days: number | null
+          generated_at: string
+          id: string
+          resources: Json
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          coach_note?: string | null
+          confidence_gain?: number | null
+          est_days?: number | null
+          generated_at?: string
+          id?: string
+          resources?: Json
+          topic: string
+          user_id: string
+        }
+        Update: {
+          coach_note?: string | null
+          confidence_gain?: number | null
+          est_days?: number | null
+          generated_at?: string
+          id?: string
+          resources?: Json
+          topic?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       level_results: {
         Row: {
           accuracy: number
@@ -95,6 +128,60 @@ export type Database = {
           updated_at?: string
           user_id?: string
           wins?: number
+        }
+        Relationships: []
+      }
+      match_answers: {
+        Row: {
+          correct_answer: string | null
+          created_at: string
+          difficulty: string | null
+          explanation: string | null
+          id: string
+          is_correct: boolean
+          language: string | null
+          question_id: string | null
+          question_text: string | null
+          room_code: string | null
+          subtopic: string | null
+          time_ms: number | null
+          topic: string
+          user_answer: string | null
+          user_id: string | null
+        }
+        Insert: {
+          correct_answer?: string | null
+          created_at?: string
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          is_correct?: boolean
+          language?: string | null
+          question_id?: string | null
+          question_text?: string | null
+          room_code?: string | null
+          subtopic?: string | null
+          time_ms?: number | null
+          topic: string
+          user_answer?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          correct_answer?: string | null
+          created_at?: string
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          is_correct?: boolean
+          language?: string | null
+          question_id?: string | null
+          question_text?: string | null
+          room_code?: string | null
+          subtopic?: string | null
+          time_ms?: number | null
+          topic?: string
+          user_answer?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -144,6 +231,51 @@ export type Database = {
             referencedColumns: ["code"]
           },
         ]
+      }
+      mp_match_audit: {
+        Row: {
+          connection_issues: Json | null
+          created_at: string
+          difficulty: string | null
+          id: string
+          language: string | null
+          players: Json
+          questions_count: number | null
+          room_code: string
+          topics: string[]
+          user_id: string | null
+          winner: string | null
+          xp_awarded: Json | null
+        }
+        Insert: {
+          connection_issues?: Json | null
+          created_at?: string
+          difficulty?: string | null
+          id?: string
+          language?: string | null
+          players?: Json
+          questions_count?: number | null
+          room_code: string
+          topics?: string[]
+          user_id?: string | null
+          winner?: string | null
+          xp_awarded?: Json | null
+        }
+        Update: {
+          connection_issues?: Json | null
+          created_at?: string
+          difficulty?: string | null
+          id?: string
+          language?: string | null
+          players?: Json
+          questions_count?: number | null
+          room_code?: string
+          topics?: string[]
+          user_id?: string | null
+          winner?: string | null
+          xp_awarded?: Json | null
+        }
+        Relationships: []
       }
       mp_room_players: {
         Row: {
@@ -329,6 +461,7 @@ export type Database = {
           last_reward_claim: string | null
           login_streak: number
           recovery_email: string | null
+          share_insights: boolean
           streak_freeze_tokens: number
           updated_at: string
           user_id: string
@@ -341,6 +474,7 @@ export type Database = {
           last_reward_claim?: string | null
           login_streak?: number
           recovery_email?: string | null
+          share_insights?: boolean
           streak_freeze_tokens?: number
           updated_at?: string
           user_id: string
@@ -353,6 +487,7 @@ export type Database = {
           last_reward_claim?: string | null
           login_streak?: number
           recovery_email?: string | null
+          share_insights?: boolean
           streak_freeze_tokens?: number
           updated_at?: string
           user_id?: string
@@ -411,6 +546,42 @@ export type Database = {
           snapshot?: Json
           source?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      topic_mastery: {
+        Row: {
+          accuracy: number
+          correct: number
+          id: string
+          last_played: string
+          mastery_level: string
+          topic: string
+          updated_at: string
+          user_id: string
+          wrong: number
+        }
+        Insert: {
+          accuracy?: number
+          correct?: number
+          id?: string
+          last_played?: string
+          mastery_level?: string
+          topic: string
+          updated_at?: string
+          user_id: string
+          wrong?: number
+        }
+        Update: {
+          accuracy?: number
+          correct?: number
+          id?: string
+          last_played?: string
+          mastery_level?: string
+          topic?: string
+          updated_at?: string
+          user_id?: string
+          wrong?: number
         }
         Relationships: []
       }
