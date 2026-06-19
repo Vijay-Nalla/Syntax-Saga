@@ -156,6 +156,9 @@ export default function PlayerDashboard({ onPlay, onSelectLanguage, onMultiplaye
         )}
         {tab === 'graphs' && <PerformanceGraphs data={data} />}
         {tab === 'backups' && <BackupRestorePanel />}
+        {tab === 'sync' && <SyncDashboard />}
+        {tab === 'rewards' && <RewardHistoryPanel />}
+        {tab === 'learning' && <LearningCenter />}
 
         <div className="flex flex-col sm:flex-row gap-2 mt-4">
           <button onClick={onSelectLanguage}
