@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Row { id: string; claim_date: string; day_in_streak: number; reward_kind: string; reward_value: number; }
+interface Row { id?: string; claim_date: string; day_in_streak: number; reward_kind: string; reward_value: number; }
 
 export default function RewardHistoryPanel() {
   const [rows, setRows] = useState<Row[]>([]);
