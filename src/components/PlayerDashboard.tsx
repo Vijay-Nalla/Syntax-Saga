@@ -21,7 +21,7 @@ interface Props {
   onSignOut: () => void;
 }
 
-type Tab = 'overview' | 'languages' | 'history' | 'graphs' | 'backups';
+type Tab = 'overview' | 'languages' | 'history' | 'graphs' | 'backups' | 'sync' | 'rewards' | 'learning';
 
 export default function PlayerDashboard({ onPlay, onSelectLanguage, onMultiplayer, onSignOut }: Props) {
   const { username: authName, user } = useAuth();
