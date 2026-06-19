@@ -1,4 +1,8 @@
+import { useEffect, useState } from 'react';
 import { MatchStats } from '@/game/types';
+import { useAuth } from '@/hooks/useAuth';
+import LearningInsightsPanel from './learning/LearningInsightsPanel';
+import { fetchRecentAnswers, fetchTopicMastery, updateTopicMastery, type AnswerRow, type MasteryRow } from '@/game/learningEngine';
 
 interface PostMatchReportProps {
   stats: MatchStats;
@@ -13,8 +17,21 @@ export default function PostMatchReport({
   onNewRoom,
   onExit
 }: PostMatchReportProps) {
+  const { user } = useAuth();
   const { player1, player2 } = stats;
   const isWinner = player1.score > player2.score;
+  const [answers, setAnswers] = useState<AnswerRow[]>([]);
+  const [mastery, setMastery] = useState<MasteryRow[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchRecentAnswers(user.id, 50).then(async (a) => {
+      setAnswers(a);
+      await updateTopicMastery(user.id, a);
+      const m = await fetchTopicMastery(user.id);
+      setMastery(m);
+    });
+  }, [user]);
 
   const topics = ['Variables', 'Loops', 'Functions', 'Arrays', 'Strings'];
 
@@ -22,7 +39,7 @@ export default function PostMatchReport({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur">
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-4xl mx-4">
+      <div className="relative z-10 w-full max-w-4xl mx-4 max-h-[92vh] overflow-y-auto py-4">
         {/* Match Result */}
         <div className="text-center mb-6">
           <h2 className="font-display text-4xl md:text-5xl font-black mb-2"
@@ -91,16 +108,16 @@ export default function PostMatchReport({
           </div>
         </div>
 
-        {/* Learning Insights */}
-        <div className="border-2 border-border rounded-lg bg-card/80 backdrop-blur-sm p-4 mb-6">
-          <p className="font-pixel text-sm text-secondary text-glow-cyan text-center mb-4">LEARNING INSIGHTS</p>
-          <div className="space-y-2">
-            <p className="font-mono text-xs text-muted-foreground text-center">• You solve Loop problems 35% faster than your friend!</p>
-            <p className="font-mono text-xs text-muted-foreground text-center">• Your strongest topic: Functions</p>
-            <p className="font-mono text-xs text-muted-foreground text-center">• Your weakest topic: Arrays</p>
-            <p className="font-mono text-xs text-muted-foreground text-center">• Friend performs best in: OOP</p>
-            <p className="font-mono text-xs text-muted-foreground text-center">• Both players should practice: Recursion</p>
-          </div>
+        {/* Learning Intelligence Center */}
+        <div className="mb-6">
+          <LearningInsightsPanel
+            answers={answers}
+            mastery={mastery}
+            meName={player1.name}
+            friendName={player2.name}
+            mePerf={player1.performance.map(p => ({ topic: p.topic, accuracy: p.accuracy }))}
+            friendPerf={player2.performance.map(p => ({ topic: p.topic, accuracy: p.accuracy }))}
+          />
         </div>
 
         {/* Action Buttons */}

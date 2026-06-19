@@ -27,6 +27,8 @@ import ForgotPassword from '@/components/ForgotPassword';
 import PlayerDashboard from '@/components/PlayerDashboard';
 import LevelSelectMap from '@/components/LevelSelectMap';
 import CloudStatusBadge from '@/components/CloudStatusBadge';
+import GameRecoveryOverlay from '@/components/GameRecoveryOverlay';
+import { startSceneHeartbeat } from '@/game/sceneGuard';
 import { useAuth } from '@/hooks/useAuth';
 import { getGuestId, getOrCreateGuestId, saveLevelResult, unlockAchievement, getDashboard } from '@/game/saveSystem';
 import { calcStars } from '@/game/starCalc';
@@ -67,6 +69,15 @@ const Index = () => {
     else if (getGuestId()) setAppPhase('dashboard');
     else setAppPhase('welcome');
   }, [authReady, user]);
+
+  // Scene heartbeat: only when the canvas should be visible (playing screens).
+  // If it hasn't painted within 5s, surface the recovery overlay.
+  useEffect(() => {
+    const playing = gameState.screen === 'playing' || gameState.screen === 'multiplayer-playing';
+    if (appPhase !== 'in-game' || !playing) return;
+    const stop = startSceneHeartbeat(canvasRef.current, 5000);
+    return stop;
+  }, [appPhase, gameState.screen]);
 
   // ====== Existing flow state ======
   const [playerNameLocal, setPlayerNameLocal] = useState(getPlayerName() || '');
@@ -496,6 +507,13 @@ const Index = () => {
         />
       )}
       <CloudStatusBadge />
+      <GameRecoveryOverlay
+        onRetry={() => {
+          // Re-trigger engine boot for current language/level if engine seems stuck.
+          try { startGame(gameState.player.language || selectedLang, playerNameLocal); } catch {}
+        }}
+        onReturnHome={handleEngineHome}
+      />
     </div>
   );
 };

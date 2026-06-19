@@ -8,6 +8,9 @@ import PerformanceGraphs from './PerformanceGraphs';
 import BackupRestorePanel from './BackupRestorePanel';
 import DailyRewardModal from './DailyRewardModal';
 import SaveConflictModal from './SaveConflictModal';
+import SyncDashboard from './SyncDashboard';
+import RewardHistoryPanel from './RewardHistoryPanel';
+import LearningCenter from './LearningCenter';
 import { LANGUAGES, Language } from '@/game/types';
 import { ACHIEVEMENTS } from '@/game/achievements';
 
@@ -18,7 +21,7 @@ interface Props {
   onSignOut: () => void;
 }
 
-type Tab = 'overview' | 'languages' | 'history' | 'graphs' | 'backups';
+type Tab = 'overview' | 'languages' | 'history' | 'graphs' | 'backups' | 'sync' | 'rewards' | 'learning';
 
 export default function PlayerDashboard({ onPlay, onSelectLanguage, onMultiplayer, onSignOut }: Props) {
   const { username: authName, user } = useAuth();
@@ -43,9 +46,12 @@ export default function PlayerDashboard({ onPlay, onSelectLanguage, onMultiplaye
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'OVERVIEW' },
+    { id: 'learning', label: 'LEARNING' },
     { id: 'languages', label: 'LANGUAGES' },
     { id: 'history', label: 'HISTORY' },
     { id: 'graphs', label: 'GRAPHS' },
+    { id: 'sync', label: 'SYNC' },
+    { id: 'rewards', label: 'REWARDS' },
     ...(user ? [{ id: 'backups' as Tab, label: 'BACKUPS' }] : []),
   ];
 
@@ -150,6 +156,9 @@ export default function PlayerDashboard({ onPlay, onSelectLanguage, onMultiplaye
         )}
         {tab === 'graphs' && <PerformanceGraphs data={data} />}
         {tab === 'backups' && <BackupRestorePanel />}
+        {tab === 'sync' && <SyncDashboard />}
+        {tab === 'rewards' && <RewardHistoryPanel />}
+        {tab === 'learning' && <LearningCenter />}
 
         <div className="flex flex-col sm:flex-row gap-2 mt-4">
           <button onClick={onSelectLanguage}

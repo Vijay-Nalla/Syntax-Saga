@@ -1,127 +1,108 @@
-# Advanced Player Ecosystem Expansion
+# Plan: Black-Screen Fix + Learning Intelligence Center
 
-## Guarantee
-Single-player engine, multiplayer engine, level design, coding challenges, controls, renderer, and existing scoring logic are **not modified**. All new systems are additive layers that wrap the existing save/auth pipeline.
+## Guarantees (Non-Negotiable)
 
----
-
-## 1. Save Conflict Resolver
-
-**New file:** `src/game/conflictResolver.ts`
-- On login (or guest-to-account upgrade), fetch cloud snapshot + local snapshot.
-- Compare `updated_at`, `unlocked_level`, `total_stars` per language.
-- If no mismatch → silent merge.
-- If mismatch → emit a conflict event handled by a new modal.
-
-**New component:** `src/components/SaveConflictModal.tsx`
-- Side-by-side cards: Cloud vs Local (level, stars, last-updated timestamp).
-- Buttons: **Use Cloud**, **Use Local**, **Smart Merge** (when mergeable).
-- Smart merge rule: pick `max(unlocked_level)`, `max(total_stars)`, union of achievements, sum of lifetime stats, latest `last_seen`.
-- Before applying any choice, write a backup row to `save_backups` (source, version, timestamp, snapshot JSON).
-
-**DB:** `save_backups (id, user_id, source text, snapshot jsonb, created_at)` — RLS scoped to `auth.uid()`.
+- Existing single-player engine, multiplayer engine, level design, coding questions, controls, and renderer are **NOT modified**.
+- Existing sync queue, daily rewards, save system, and conflict resolver from prior expansions stay intact — this plan **extends** them, never replaces.
 
 ---
 
-## 2. Offline Auto-Save + Sync Queue
+## Part 1 — Critical Fix: Black Screen Recovery
 
-**New file:** `src/game/syncQueue.ts`
-- Wraps existing `saveSystem.ts` calls. When `navigator.onLine === false` OR a Supabase call rejects, enqueue an action: `{kind, payload, ts}` in `localStorage["syntax-saga.sync-queue"]`.
-- Kinds: `level_result`, `achievement`, `progress`, `stats_delta`.
-- A drainer runs on `window.online` event, on app focus, and every 30s while signed in.
-- Each action is idempotent (uses upsert keys already in schema).
+**Root cause investigation first.** I will inspect `useGameEngine.ts`, `renderer.ts`, `Index.tsx`, and the multiplayer client to identify why some sessions render black. Most likely causes: a thrown error in the `useEffect` mounting the canvas, a missing canvas ref on remount, or an unhandled rejection in `multiplayerClient.ts` during room join that leaves the scene in `loading` forever.
 
-**New component:** `src/components/CloudStatusBadge.tsx`
-- Fixed bottom-right pill: `✓ Synced` / `Syncing…` / `Offline` / `N pending`.
-- Subscribes to the queue + `navigator.onLine`.
-- Replaces existing `SyncStatusBadge.tsx` (kept as thin re-export for compat).
+**Recovery layer (additive, not a rewrite):**
 
-**Behavior:** Existing `saveLevelResult` etc. keep their current signatures; internally they now go through the queue wrapper. No engine change.
-
----
-
-## 3. Daily Login Streak + Rewards
-
-**DB additions:**
-- Extend `profiles`: add `last_reward_claim date`, `streak_freeze_tokens int default 1`.
-- New table `daily_rewards_log (user_id, claim_date, day_in_streak, reward_kind, reward_value)` — composite PK `(user_id, claim_date)`.
-
-**New file:** `src/game/dailyRewards.ts`
-- Reward ladder: Day 1 (50c), 2 (100c), 3 (XP boost), 4 (avatar item), 5 (achievement token), 7 (rare), 14 (epic), 30 (legendary). Cycles after 30.
-- On login: compute days since `last_login`. `0` = already claimed today; `1` = streak +1; `>1` = consume freeze token if available, else reset to 1.
-
-**New component:** `src/components/DailyRewardModal.tsx`
-- Shown once per day after dashboard mount; displays ladder, current day, claim button.
-- On claim → atomic RPC `claim_daily_reward()` (security-definer) that updates profile, inserts log row, credits coins to `player_stats`.
+- New `src/game/sceneGuard.ts`: wraps engine boot with try/catch + heartbeat (checks canvas has rendered a frame within 4s). On failure → emits `scene:failed` with reason code.
+- New `src/components/GameRecoveryOverlay.tsx`: full-screen overlay shown when `scene:failed` fires. Displays:
+  - "Recovering Game Session…" with animated progress
+  - Diagnostics list (asset load, websocket, scene init, last error)
+  - Buttons: **Retry**, **Restore Last Save**, **Return to Menu**
+  - Auto-retry once after 2s before showing manual buttons.
+- Wire into `Index.tsx` around the game canvas. No engine code changes — guard sits outside.
 
 ---
 
-## 4. Player Profile History + Analytics
+## Part 2 — Offline Sync Queue Dashboard (extends existing queue)
 
-**Extend `player_stats`:** add `total_correct int`, `total_wrong int`, `total_coins int`, `longest_session_s int`, `best_accuracy int`.
+The sync queue already exists. I'll add visibility + the missing categories:
 
-**New table:** `progress_events (id, user_id, kind, language, level, payload jsonb, created_at)` — append-only timeline. Kinds: `level_completed`, `achievement_unlocked`, `mp_victory`, `language_mastered`, `streak_milestone`. RLS: own rows only.
-
-**New components:**
-- `src/components/ProfileDashboard.tsx` (replaces existing `PlayerDashboard.tsx`'s analytics tab; the existing dashboard keeps its current shell, gains tabs: **Overview / Languages / History / Graphs**).
-- `src/components/LanguageAnalytics.tsx` — per-language cards (level, %, stars, accuracy, time, challenges).
-- `src/components/ProgressTimeline.tsx` — vertical event list from `progress_events`.
-- `src/components/PerformanceGraphs.tsx` — uses `recharts` (already a shadcn dep) for accuracy trend, stars/week, login activity heatmap.
-
-Hooks into existing completion callbacks emit `progress_events` rows via the sync queue — no engine edits.
+- Extend `syncQueue.ts` action kinds to include: `xp_reward`, `match_history`, `reward_claim`, `profile_change`, `stats_update` (achievements already covered).
+- New `src/components/SyncDashboard.tsx`: live counts (Pending, Queued Rewards, Unsynced Matches), per-action list, manual "Sync Now" button. Mount as a tab inside existing `PlayerDashboard`.
+- Conflict resolver already implemented — just surface its "manual review required" state through a toast.
 
 ---
 
-## 5. Multiplayer Security Hardening
+## Part 3 — Match Audit Logs
 
-The current `mp_*` tables intentionally allow anonymous room-code play. Harden without breaking guests:
+New table `mp_match_audit` (room_code, players jsonb, topics text[], difficulty, questions jsonb, answers jsonb, winner, xp_awarded jsonb, connection_issues jsonb, created_at). RLS: players in the match can read their own row; service_role full.
 
-**Migration changes:**
-- Add `session_token uuid default gen_random_uuid()`, `expires_at timestamptz default now()+interval '4 hours'` to `mp_rooms`.
-- Add `session_token uuid`, `device_id text`, `last_activity timestamptz` to `mp_room_players`.
-- Replace `USING (true)` policies with **token-scoped policies**: a player can only `SELECT/UPDATE` their own row (`session_token` match) or rows in the same `room_code` they're a member of. Enforced via SQL security-definer helpers `mp_is_member(code, token)` / `mp_is_host(code, token)`.
-- Trigger `mp_validate_score()` clamps `score`, `challenges_won`, `correct_answers` deltas per update (no >+1 challenge per call, no score regressions, server timestamps `last_activity`).
-- Trigger on `mp_challenge_locks`: only the lock owner (matching `owner_id` + valid session) may mark `solved_correctly`.
-- Auto-expire: cron-less cleanup via a `before insert` trigger that deletes rooms past `expires_at`.
-
-**Client side (`multiplayerClient.ts`):** add `session_token` to every request; persist in `sessionStorage`. No UX change for the player — token is generated on join.
-
-**Cheat-protection RPCs:** `mp_award_points(room_code, token, delta)` validates membership + bounds before incrementing. Replaces direct table updates from the client.
+`multiplayerClient.ts` (additive — no behavioural change to existing flow): after match ends, write one audit row with the buffered question/answer log it already tracks locally.
 
 ---
 
-## 6. Backup & Restore
+## Part 4 — Reward Claim History
 
-- `save_backups` table (above) holds full snapshots on: conflict-resolve, account creation, before destructive merge, manual "Backup now" button on profile.
-- New `BackupRestorePanel.tsx` in profile settings lists backups (date, source) with **Restore** button → confirms, writes a new backup of current state, then restores.
+Uses existing `daily_rewards_log` + a new `reward_history` view that unions daily/weekly/event/streak/referral sources. New `src/components/RewardHistoryPanel.tsx` with date/source/amount filtering. Mount as tab in `PlayerDashboard`.
 
 ---
+
+## Part 5 — Learning Intelligence Center (the core feature)
+
+New tables:
+- `match_answers` (match_id, user_id, question_id, topic, subtopic, difficulty, user_answer, correct_answer, is_correct, time_ms, explanation)
+- `topic_mastery` (user_id, topic, correct, wrong, accuracy, last_played, mastery_level enum: weak/avg/strong)
+- `learning_recommendations` (user_id, topic, resources jsonb, est_days, generated_at)
+
+New module `src/game/learningEngine.ts`:
+- `summarizeMatch(matchId)` → strengths, weaknesses, knowledge gaps
+- `compareWithOpponent(matchId)` → per-topic % both sides
+- `generateRecommendations(userId)` → uses Lovable AI (`google/gemini-3-flash-preview`) via a new edge function `learning-coach` for the AI study coach text + roadmap. Falls back to rule-based suggestions if AI unavailable.
+- `updateTopicMastery(userId, answers)` → recomputes mastery rollups.
+
+New edge function `supabase/functions/learning-coach/index.ts`:
+- Input: match summary + user history
+- Output: personalized coach feedback, weak-area explanations, study plan
+- Uses Lovable AI Gateway (`LOVABLE_API_KEY` already provisioned).
+
+New components (all under `src/components/learning/`):
+- `PostMatchReport.tsx` — replaces the bare Winner/Loser screen as a wrapper (existing screen still rendered inside as a header). Tabs: Performance, Comparison, Wrong Answers, Recommendations, Coach.
+- `PlayerComparisonBoard.tsx` — side-by-side per-topic % bars
+- `SkillGapAnalysis.tsx` — your weak vs friend's weak areas
+- `WrongAnswerReview.tsx` — per-question deep dive cards with explanation, concept, expected thinking
+- `SmartRecommendations.tsx` — videos/notes/practice/mock test cards with estimated improvement time
+- `StudyCoachCard.tsx` — AI-generated narrative feedback
+- `KnowledgeHeatmap.tsx` — grid of topics × color scale
+- `ImprovementTrendChart.tsx` — recharts line graph (last match / week / month / lifetime)
+- `LearningRoadmap.tsx` — day-by-day plan
+- `TopicLeaderboard.tsx` — best-per-topic rankings (queries `topic_mastery` ordered by accuracy)
+- `FriendLearningInsights.tsx` — opt-in friend comparison (gated by `profiles.share_insights` bool)
+
+Dashboard integration: new "Learning" tab in `PlayerDashboard` containing heatmap, trends, roadmap, topic leaderboard, friend insights.
+
+---
+
+## Part 6 — UI Polish
+
+All new screens use existing cyberpunk tokens (cyan/magenta neon, scanlines, glass cards). Animated rings via Tailwind keyframes already in config. Recharts for graphs. Framer-motion only for the post-match report reveal sequence.
+
+---
+
+## Migration Order
+
+1. Migration: `mp_match_audit`, `match_answers`, `topic_mastery`, `learning_recommendations`, `profiles.share_insights` column.
+2. Edge function: `learning-coach`.
+3. Engine guard + recovery overlay (fix the black screen first so users can actually reach the new features).
+4. Sync queue extension + dashboard.
+5. Match audit write hook in multiplayer client.
+6. Learning engine + post-match report components.
+7. Dashboard tabs (Sync, Rewards, Learning).
+8. Smoke test: guest → play → disconnect → reconnect → finish match → verify post-match report renders.
 
 ## Files
 
-**New**
-- `src/game/conflictResolver.ts`, `syncQueue.ts`, `dailyRewards.ts`, `analytics.ts`
-- `src/components/SaveConflictModal.tsx`, `CloudStatusBadge.tsx`, `DailyRewardModal.tsx`, `ProfileDashboard.tsx`, `LanguageAnalytics.tsx`, `ProgressTimeline.tsx`, `PerformanceGraphs.tsx`, `BackupRestorePanel.tsx`
-- 1 migration: schema additions + RLS rewrite for `mp_*` + helper functions + RPCs
+**New (~22):** `sceneGuard.ts`, `GameRecoveryOverlay.tsx`, `SyncDashboard.tsx`, `RewardHistoryPanel.tsx`, `learningEngine.ts`, 11 learning components, edge function, 1 migration.
 
-**Edited (additive only)**
-- `src/game/saveSystem.ts` — route writes through `syncQueue`
-- `src/game/multiplayerClient.ts` — attach `session_token`, call `mp_award_points` RPC
-- `src/components/PlayerDashboard.tsx` — mount new tabs + modals
-- `src/pages/Index.tsx` — mount `CloudStatusBadge` + conflict/daily-reward modals at root
-- `src/components/SyncStatusBadge.tsx` — re-export shim
+**Edited (~5):** `syncQueue.ts` (new kinds), `multiplayerClient.ts` (audit write hook), `PlayerDashboard.tsx` (new tabs), `Index.tsx` (wrap game with recovery overlay), `types.ts` (auto-regen after migration).
 
-**Untouched**
-- `useGameEngine.ts`, `renderer.ts`, `levels.ts`, `questions.ts`, `CodingChallenge.tsx`, `GameHUD.tsx`, `MultiplayerLobby.tsx` (no UX change), `TouchControls.tsx`, `TitleScreen.tsx`
-
----
-
-## Order of execution
-1. Run migration (schema + RLS + RPCs + triggers).
-2. Build `syncQueue` + wrap `saveSystem`.
-3. Build `conflictResolver` + modal.
-4. Build daily rewards (table, RPC, modal, hook).
-5. Build profile dashboard tabs + analytics components.
-6. Harden multiplayer client to use tokens + RPCs.
-7. Wire `CloudStatusBadge` and modals into `Index.tsx`.
-8. Smoke-test offline play → reconnect → sync.
+**Untouched:** all engine files (`renderer.ts`, `useGameEngine.ts` internals), level/question data, controls, single-player flow.
