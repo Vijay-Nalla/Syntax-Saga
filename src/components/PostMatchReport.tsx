@@ -39,7 +39,7 @@ export default function PostMatchReport({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur">
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-4xl mx-4">
+      <div className="relative z-10 w-full max-w-4xl mx-4 max-h-[92vh] overflow-y-auto py-4">
         {/* Match Result */}
         <div className="text-center mb-6">
           <h2 className="font-display text-4xl md:text-5xl font-black mb-2"
