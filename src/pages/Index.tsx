@@ -70,6 +70,14 @@ const Index = () => {
     else setAppPhase('welcome');
   }, [authReady, user]);
 
+  // Scene heartbeat: if the canvas hasn't painted soon after entering in-game phase,
+  // surface the recovery overlay instead of leaving the user staring at a black screen.
+  useEffect(() => {
+    if (appPhase !== 'in-game') return;
+    const stop = startSceneHeartbeat(canvasRef.current, 5000);
+    return stop;
+  }, [appPhase, gameState.screen]);
+
   // ====== Existing flow state ======
   const [playerNameLocal, setPlayerNameLocal] = useState(getPlayerName() || '');
   const [matchTimeElapsed, setMatchTimeElapsed] = useState(0);
