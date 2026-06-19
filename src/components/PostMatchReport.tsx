@@ -1,4 +1,8 @@
+import { useEffect, useState } from 'react';
 import { MatchStats } from '@/game/types';
+import { useAuth } from '@/hooks/useAuth';
+import LearningInsightsPanel from './learning/LearningInsightsPanel';
+import { fetchRecentAnswers, fetchTopicMastery, updateTopicMastery, type AnswerRow, type MasteryRow } from '@/game/learningEngine';
 
 interface PostMatchReportProps {
   stats: MatchStats;
@@ -13,8 +17,21 @@ export default function PostMatchReport({
   onNewRoom,
   onExit
 }: PostMatchReportProps) {
+  const { user } = useAuth();
   const { player1, player2 } = stats;
   const isWinner = player1.score > player2.score;
+  const [answers, setAnswers] = useState<AnswerRow[]>([]);
+  const [mastery, setMastery] = useState<MasteryRow[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchRecentAnswers(user.id, 50).then(async (a) => {
+      setAnswers(a);
+      await updateTopicMastery(user.id, a);
+      const m = await fetchTopicMastery(user.id);
+      setMastery(m);
+    });
+  }, [user]);
 
   const topics = ['Variables', 'Loops', 'Functions', 'Arrays', 'Strings'];
 
