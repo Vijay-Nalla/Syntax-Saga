@@ -70,10 +70,11 @@ const Index = () => {
     else setAppPhase('welcome');
   }, [authReady, user]);
 
-  // Scene heartbeat: if the canvas hasn't painted soon after entering in-game phase,
-  // surface the recovery overlay instead of leaving the user staring at a black screen.
+  // Scene heartbeat: only when the canvas should be visible (playing screens).
+  // If it hasn't painted within 5s, surface the recovery overlay.
   useEffect(() => {
-    if (appPhase !== 'in-game') return;
+    const playing = gameState.screen === 'playing' || gameState.screen === 'multiplayer-playing';
+    if (appPhase !== 'in-game' || !playing) return;
     const stop = startSceneHeartbeat(canvasRef.current, 5000);
     return stop;
   }, [appPhase, gameState.screen]);
