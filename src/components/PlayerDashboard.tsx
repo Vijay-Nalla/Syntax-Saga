@@ -8,6 +8,9 @@ import PerformanceGraphs from './PerformanceGraphs';
 import BackupRestorePanel from './BackupRestorePanel';
 import DailyRewardModal from './DailyRewardModal';
 import SaveConflictModal from './SaveConflictModal';
+import SyncDashboard from './SyncDashboard';
+import RewardHistoryPanel from './RewardHistoryPanel';
+import LearningCenter from './LearningCenter';
 import { LANGUAGES, Language } from '@/game/types';
 import { ACHIEVEMENTS } from '@/game/achievements';
 
