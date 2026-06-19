@@ -27,6 +27,8 @@ import ForgotPassword from '@/components/ForgotPassword';
 import PlayerDashboard from '@/components/PlayerDashboard';
 import LevelSelectMap from '@/components/LevelSelectMap';
 import CloudStatusBadge from '@/components/CloudStatusBadge';
+import GameRecoveryOverlay from '@/components/GameRecoveryOverlay';
+import { startSceneHeartbeat } from '@/game/sceneGuard';
 import { useAuth } from '@/hooks/useAuth';
 import { getGuestId, getOrCreateGuestId, saveLevelResult, unlockAchievement, getDashboard } from '@/game/saveSystem';
 import { calcStars } from '@/game/starCalc';
