@@ -36,7 +36,7 @@ export default function RewardHistoryPanel() {
             </thead>
             <tbody>
               {filtered.map(r => (
-                <tr key={r.id} className="border-t border-border/40">
+                <tr key={r.id || `${r.claim_date}-${r.day_in_streak}`} className="border-t border-border/40">
                   <td className="p-2 text-muted-foreground">{r.claim_date}</td>
                   <td className="p-2 text-secondary">Daily · Day {r.day_in_streak}</td>
                   <td className="p-2 text-foreground">{r.reward_kind}</td>
