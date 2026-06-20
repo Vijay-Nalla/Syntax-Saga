@@ -71,6 +71,21 @@ export default function LearningCenter() {
         <SmartRecommendations recos={recos} />
       </div>
 
+      <div>
+        <p className="font-pixel text-[10px] text-secondary mb-2">IMPROVEMENT TREND</p>
+        <ImprovementTrendChart answers={answers} />
+      </div>
+
+      <div>
+        <p className="font-pixel text-[10px] text-secondary mb-2">7-DAY ROADMAP</p>
+        <LearningRoadmap weakTopics={summary.weaknesses} />
+      </div>
+
+      <div>
+        <p className="font-pixel text-[10px] text-secondary mb-2">TOPIC LEADERBOARD</p>
+        <TopicLeaderboard />
+      </div>
+
       <div className="border border-border rounded p-3 bg-card/40 flex items-center justify-between">
         <div>
           <p className="font-pixel text-[10px] text-foreground">SHARE INSIGHTS WITH FRIENDS</p>
@@ -81,6 +96,13 @@ export default function LearningCenter() {
           {shareOn ? "ON" : "OFF"}
         </button>
       </div>
+
+      {shareOn && (
+        <div>
+          <p className="font-pixel text-[10px] text-secondary mb-2">PEER COMPARISON</p>
+          <FriendLearningInsights mine={mastery} />
+        </div>
+      )}
     </div>
   );
 }
