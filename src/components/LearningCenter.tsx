@@ -4,6 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import KnowledgeHeatmap from "./learning/KnowledgeHeatmap";
 import SmartRecommendations from "./learning/SmartRecommendations";
+import ImprovementTrendChart from "./learning/ImprovementTrendChart";
+import LearningRoadmap from "./learning/LearningRoadmap";
+import TopicLeaderboard from "./learning/TopicLeaderboard";
+import FriendLearningInsights from "./learning/FriendLearningInsights";
 import {
   buildRecommendations, fetchRecentAnswers, fetchTopicMastery, summarizeAnswers,
   type AnswerRow, type MasteryRow,
