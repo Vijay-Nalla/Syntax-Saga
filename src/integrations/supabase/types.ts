@@ -59,6 +59,33 @@ export type Database = {
         }
         Relationships: []
       }
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       learning_recommendations: {
         Row: {
           coach_note: string | null
@@ -413,7 +440,10 @@ export type Database = {
           languages_played: Json
           levels_completed: number
           longest_session_s: number
+          matches_played: number
+          matches_won: number
           mp_wins: number
+          skill_rating: number
           total_coins: number
           total_correct: number
           total_play_time_s: number
@@ -428,7 +458,10 @@ export type Database = {
           languages_played?: Json
           levels_completed?: number
           longest_session_s?: number
+          matches_played?: number
+          matches_won?: number
           mp_wins?: number
+          skill_rating?: number
           total_coins?: number
           total_correct?: number
           total_play_time_s?: number
@@ -443,7 +476,10 @@ export type Database = {
           languages_played?: Json
           levels_completed?: number
           longest_session_s?: number
+          matches_played?: number
+          matches_won?: number
           mp_wins?: number
+          skill_rating?: number
           total_coins?: number
           total_correct?: number
           total_play_time_s?: number
@@ -585,12 +621,40 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       claim_daily_reward: { Args: never; Returns: Json }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       mp_award_points: {
         Args: {
           _challenge_win: boolean
@@ -608,7 +672,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -735,6 +799,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
