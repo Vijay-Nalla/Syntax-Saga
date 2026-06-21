@@ -1,18 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { getDashboard, DashboardData } from '@/game/saveSystem';
 import { useAuth } from '@/hooks/useAuth';
 import CloudStatusBadge from './CloudStatusBadge';
-import LanguageAnalytics from './LanguageAnalytics';
-import ProgressTimeline from './ProgressTimeline';
-import PerformanceGraphs from './PerformanceGraphs';
-import BackupRestorePanel from './BackupRestorePanel';
-import DailyRewardModal from './DailyRewardModal';
-import SaveConflictModal from './SaveConflictModal';
-import SyncDashboard from './SyncDashboard';
-import RewardHistoryPanel from './RewardHistoryPanel';
-import LearningCenter from './LearningCenter';
 import { LANGUAGES, Language } from '@/game/types';
 import { ACHIEVEMENTS } from '@/game/achievements';
+
+// Lazy-load heavy tab content to keep initial bundle small.
+const LanguageAnalytics = lazy(() => import('./LanguageAnalytics'));
+const ProgressTimeline = lazy(() => import('./ProgressTimeline'));
+const PerformanceGraphs = lazy(() => import('./PerformanceGraphs'));
+const BackupRestorePanel = lazy(() => import('./BackupRestorePanel'));
+const SyncDashboard = lazy(() => import('./SyncDashboard'));
+const RewardHistoryPanel = lazy(() => import('./RewardHistoryPanel'));
+const LearningCenter = lazy(() => import('./LearningCenter'));
+const FriendsPanel = lazy(() => import('./FriendsPanel'));
+const DailyRewardModal = lazy(() => import('./DailyRewardModal'));
+const SaveConflictModal = lazy(() => import('./SaveConflictModal'));
+
+const TabFallback = () => <div className="font-pixel text-[10px] text-muted-foreground p-4">Loading…</div>;
 
 interface Props {
   onPlay: () => void;
@@ -21,7 +26,8 @@ interface Props {
   onSignOut: () => void;
 }
 
-type Tab = 'overview' | 'languages' | 'history' | 'graphs' | 'backups' | 'sync' | 'rewards' | 'learning';
+type Tab = 'overview' | 'languages' | 'history' | 'graphs' | 'backups' | 'sync' | 'rewards' | 'learning' | 'friends';
+
 
 export default function PlayerDashboard({ onPlay, onSelectLanguage, onMultiplayer, onSignOut }: Props) {
   const { username: authName, user } = useAuth();
@@ -52,8 +58,10 @@ export default function PlayerDashboard({ onPlay, onSelectLanguage, onMultiplaye
     { id: 'graphs', label: 'GRAPHS' },
     { id: 'sync', label: 'SYNC' },
     { id: 'rewards', label: 'REWARDS' },
+    ...(user ? [{ id: 'friends' as Tab, label: 'FRIENDS' }] : []),
     ...(user ? [{ id: 'backups' as Tab, label: 'BACKUPS' }] : []),
   ];
+
 
   return (
     <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
@@ -147,18 +155,21 @@ export default function PlayerDashboard({ onPlay, onSelectLanguage, onMultiplaye
           </>
         )}
 
-        {tab === 'languages' && <LanguageAnalytics data={data} />}
-        {tab === 'history' && (
-          <div className="border border-border rounded-lg p-4 bg-card/50">
-            <p className="font-pixel text-[10px] text-muted-foreground mb-3">PROGRESS TIMELINE</p>
-            <ProgressTimeline />
-          </div>
-        )}
-        {tab === 'graphs' && <PerformanceGraphs data={data} />}
-        {tab === 'backups' && <BackupRestorePanel />}
-        {tab === 'sync' && <SyncDashboard />}
-        {tab === 'rewards' && <RewardHistoryPanel />}
-        {tab === 'learning' && <LearningCenter />}
+        <Suspense fallback={<TabFallback />}>
+          {tab === 'languages' && <LanguageAnalytics data={data} />}
+          {tab === 'history' && (
+            <div className="border border-border rounded-lg p-4 bg-card/50">
+              <p className="font-pixel text-[10px] text-muted-foreground mb-3">PROGRESS TIMELINE</p>
+              <ProgressTimeline />
+            </div>
+          )}
+          {tab === 'graphs' && <PerformanceGraphs data={data} />}
+          {tab === 'backups' && <BackupRestorePanel />}
+          {tab === 'sync' && <SyncDashboard />}
+          {tab === 'rewards' && <RewardHistoryPanel />}
+          {tab === 'learning' && <LearningCenter />}
+          {tab === 'friends' && <FriendsPanel />}
+        </Suspense>
 
         <div className="flex flex-col sm:flex-row gap-2 mt-4">
           <button onClick={onSelectLanguage}
@@ -177,8 +188,11 @@ export default function PlayerDashboard({ onPlay, onSelectLanguage, onMultiplaye
       </div>
 
       {/* Account-only modals */}
-      {user && <SaveConflictModal />}
-      {user && <DailyRewardModal />}
+      <Suspense fallback={null}>
+        {user && <SaveConflictModal />}
+        {user && <DailyRewardModal />}
+      </Suspense>
     </div>
   );
 }
+
