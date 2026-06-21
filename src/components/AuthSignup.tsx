@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { isUsernameAvailable } from '@/game/saveSystem';
+import { isUsernameAvailable, migrateGuestToAccount } from '@/game/saveSystem';
 import { toast } from 'sonner';
+import { lovable } from '@/integrations/lovable';
+
 
 interface Props { onSuccess: () => void; onBack: () => void; }
 
