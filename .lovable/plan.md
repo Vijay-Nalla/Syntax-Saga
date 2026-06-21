@@ -1,108 +1,52 @@
-# Plan: Black-Screen Fix + Learning Intelligence Center
+# Final System-Wide Validation, QA & Google Sign-In Restoration
 
-## Guarantees (Non-Negotiable)
+This is a large, multi-part request. I'll deliver it in **two phases** so you can review before I touch large amounts of code.
 
-- Existing single-player engine, multiplayer engine, level design, coding questions, controls, and renderer are **NOT modified**.
-- Existing sync queue, daily rewards, save system, and conflict resolver from prior expansions stay intact — this plan **extends** them, never replaces.
+## Phase 1 — Audit + Critical Fixes (this turn, on approval)
 
----
+### A. Project-wide Audit Report
+A written launch-readiness report covering: frontend, backend, DB schema, auth, multiplayer, XP/rewards, achievements, leaderboards, learning analytics, AI coach, sync queue, security (RLS + GRANTs), UI/responsiveness, performance. Each system rated Working / Issue (Critical/High/Medium/Low) with exact file references and recommended fix.
 
-## Part 1 — Critical Fix: Black Screen Recovery
+I will run:
+- `security--run_security_scan` for RLS/data-exposure findings
+- `supabase--linter` for DB warnings
+- `supabase--read_query` to spot-check policies on `mp_room_players`, `match_answers`, `topic_mastery`, `profiles`, `learning_recommendations`
+- Code grep for client-side XP/score writes, hardcoded colors, unguarded `dangerouslySetInnerHTML`, missing `aria-label`s on icon buttons
 
-**Root cause investigation first.** I will inspect `useGameEngine.ts`, `renderer.ts`, `Index.tsx`, and the multiplayer client to identify why some sessions render black. Most likely causes: a thrown error in the `useEffect` mounting the canvas, a missing canvas ref on remount, or an unhandled rejection in `multiplayerClient.ts` during room join that leaves the scene in `loading` forever.
+### B. Restore Google Sign-In (highest-priority concrete fix)
+Recover the previously-removed Google flow using **Lovable Cloud managed Google OAuth** (no new architecture, no new secrets):
 
-**Recovery layer (additive, not a rewrite):**
+1. Run `supabase--configure_social_auth` for Google so the provider is enabled and the generated `src/integrations/lovable/` module is regenerated.
+2. Re-add a "Continue with Google" button to `AuthLogin.tsx` and `AuthSignup.tsx` calling `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`.
+3. In `useAuth.ts` + `handle_new_user()` trigger: confirm profile auto-creation handles `provider=google` users (username from `raw_user_meta_data.full_name` fallback to email prefix) — trigger already does this; only add a guard for empty username collisions.
+4. Add `migrateGuestToAccount()` call on first Google sign-in so guest progress isn't lost.
+5. Account linking UI: small "Link Google" button in `PlayerDashboard` Profile tab using `supabase.auth.linkIdentity({ provider: 'google' })`, and "Unlink" using `supabase.auth.unlinkIdentity()` (guarded: refuse if it's the only identity).
 
-- New `src/game/sceneGuard.ts`: wraps engine boot with try/catch + heartbeat (checks canvas has rendered a frame within 4s). On failure → emits `scene:failed` with reason code.
-- New `src/components/GameRecoveryOverlay.tsx`: full-screen overlay shown when `scene:failed` fires. Displays:
-  - "Recovering Game Session…" with animated progress
-  - Diagnostics list (asset load, websocket, scene init, last error)
-  - Buttons: **Retry**, **Restore Last Save**, **Return to Menu**
-  - Auto-retry once after 2s before showing manual buttons.
-- Wire into `Index.tsx` around the game canvas. No engine code changes — guard sits outside.
+### C. Critical fixes surfaced by the audit (only ones I'm confident about up-front)
+- **Score/XP server-side validation**: `mp_award_points` already clamps deltas — confirm RLS on `mp_room_players` UPDATE only allows the player's own row via `session_token`, and that direct client UPDATEs are blocked (force all writes through the RPC). If client UPDATE policy exists, tighten it in a migration.
+- **`match_answers` & `topic_mastery` integrity**: add a policy preventing users from inserting rows for other `user_id`s if not already enforced.
+- **`learning-coach` edge function**: add JWT verification (currently may be public) and rate-limit by user_id in-memory.
+- **Accessibility quick-wins**: add `aria-label` to icon-only buttons in `GameHUD`, `PauseMenu`, `TouchControls`, `Joystick`; replace any `h-screen` with `h-dvh` on full-height layouts.
+- **Performance**: lazy-load `LearningCenter`, `PostMatchReport`, `PlayerDashboard` heavy tabs with `React.lazy` to cut initial bundle.
 
----
+## Phase 2 — Deep gameplay/learning improvements (separate turn)
 
-## Part 2 — Offline Sync Queue Dashboard (extends existing queue)
+Only after Phase 1 is approved and merged:
+- Question-bank quality pass (duplicate detection script, explanation completeness check)
+- Matchmaking skill-rating (Elo-lite) on `player_stats`
+- Stress-test simulation script for multiplayer rooms
+- Friend system + notifications (new tables — large migration)
+- Admin dashboard (new route, role-gated via `has_role`)
 
-The sync queue already exists. I'll add visibility + the missing categories:
+## Out of scope (per your standing rules)
+- No changes to single-player engine, multiplayer engine, level design, coding challenges, controls, or renderer files (`src/game/useGameEngine.ts`, `useMultiplayer.ts`, `renderer.ts`, `levels.ts`, `questions.ts`, `multiplayerClient.ts` gameplay logic).
+- No feature removals.
 
-- Extend `syncQueue.ts` action kinds to include: `xp_reward`, `match_history`, `reward_claim`, `profile_change`, `stats_update` (achievements already covered).
-- New `src/components/SyncDashboard.tsx`: live counts (Pending, Queued Rewards, Unsynced Matches), per-action list, manual "Sync Now" button. Mount as a tab inside existing `PlayerDashboard`.
-- Conflict resolver already implemented — just surface its "manual review required" state through a toast.
+## Deliverables this turn (after approval)
+1. `AUDIT_REPORT.md` at project root with full findings + readiness scores.
+2. Google Sign-In fully restored end-to-end (login, signup, linking, guest migration).
+3. One migration tightening RLS on `mp_room_players`, `match_answers`, `topic_mastery` if gaps are found.
+4. Edge-function hardening for `learning-coach` (verify_jwt).
+5. A11y + lazy-loading quick wins.
 
----
-
-## Part 3 — Match Audit Logs
-
-New table `mp_match_audit` (room_code, players jsonb, topics text[], difficulty, questions jsonb, answers jsonb, winner, xp_awarded jsonb, connection_issues jsonb, created_at). RLS: players in the match can read their own row; service_role full.
-
-`multiplayerClient.ts` (additive — no behavioural change to existing flow): after match ends, write one audit row with the buffered question/answer log it already tracks locally.
-
----
-
-## Part 4 — Reward Claim History
-
-Uses existing `daily_rewards_log` + a new `reward_history` view that unions daily/weekly/event/streak/referral sources. New `src/components/RewardHistoryPanel.tsx` with date/source/amount filtering. Mount as tab in `PlayerDashboard`.
-
----
-
-## Part 5 — Learning Intelligence Center (the core feature)
-
-New tables:
-- `match_answers` (match_id, user_id, question_id, topic, subtopic, difficulty, user_answer, correct_answer, is_correct, time_ms, explanation)
-- `topic_mastery` (user_id, topic, correct, wrong, accuracy, last_played, mastery_level enum: weak/avg/strong)
-- `learning_recommendations` (user_id, topic, resources jsonb, est_days, generated_at)
-
-New module `src/game/learningEngine.ts`:
-- `summarizeMatch(matchId)` → strengths, weaknesses, knowledge gaps
-- `compareWithOpponent(matchId)` → per-topic % both sides
-- `generateRecommendations(userId)` → uses Lovable AI (`google/gemini-3-flash-preview`) via a new edge function `learning-coach` for the AI study coach text + roadmap. Falls back to rule-based suggestions if AI unavailable.
-- `updateTopicMastery(userId, answers)` → recomputes mastery rollups.
-
-New edge function `supabase/functions/learning-coach/index.ts`:
-- Input: match summary + user history
-- Output: personalized coach feedback, weak-area explanations, study plan
-- Uses Lovable AI Gateway (`LOVABLE_API_KEY` already provisioned).
-
-New components (all under `src/components/learning/`):
-- `PostMatchReport.tsx` — replaces the bare Winner/Loser screen as a wrapper (existing screen still rendered inside as a header). Tabs: Performance, Comparison, Wrong Answers, Recommendations, Coach.
-- `PlayerComparisonBoard.tsx` — side-by-side per-topic % bars
-- `SkillGapAnalysis.tsx` — your weak vs friend's weak areas
-- `WrongAnswerReview.tsx` — per-question deep dive cards with explanation, concept, expected thinking
-- `SmartRecommendations.tsx` — videos/notes/practice/mock test cards with estimated improvement time
-- `StudyCoachCard.tsx` — AI-generated narrative feedback
-- `KnowledgeHeatmap.tsx` — grid of topics × color scale
-- `ImprovementTrendChart.tsx` — recharts line graph (last match / week / month / lifetime)
-- `LearningRoadmap.tsx` — day-by-day plan
-- `TopicLeaderboard.tsx` — best-per-topic rankings (queries `topic_mastery` ordered by accuracy)
-- `FriendLearningInsights.tsx` — opt-in friend comparison (gated by `profiles.share_insights` bool)
-
-Dashboard integration: new "Learning" tab in `PlayerDashboard` containing heatmap, trends, roadmap, topic leaderboard, friend insights.
-
----
-
-## Part 6 — UI Polish
-
-All new screens use existing cyberpunk tokens (cyan/magenta neon, scanlines, glass cards). Animated rings via Tailwind keyframes already in config. Recharts for graphs. Framer-motion only for the post-match report reveal sequence.
-
----
-
-## Migration Order
-
-1. Migration: `mp_match_audit`, `match_answers`, `topic_mastery`, `learning_recommendations`, `profiles.share_insights` column.
-2. Edge function: `learning-coach`.
-3. Engine guard + recovery overlay (fix the black screen first so users can actually reach the new features).
-4. Sync queue extension + dashboard.
-5. Match audit write hook in multiplayer client.
-6. Learning engine + post-match report components.
-7. Dashboard tabs (Sync, Rewards, Learning).
-8. Smoke test: guest → play → disconnect → reconnect → finish match → verify post-match report renders.
-
-## Files
-
-**New (~22):** `sceneGuard.ts`, `GameRecoveryOverlay.tsx`, `SyncDashboard.tsx`, `RewardHistoryPanel.tsx`, `learningEngine.ts`, 11 learning components, edge function, 1 migration.
-
-**Edited (~5):** `syncQueue.ts` (new kinds), `multiplayerClient.ts` (audit write hook), `PlayerDashboard.tsx` (new tabs), `Index.tsx` (wrap game with recovery overlay), `types.ts` (auto-regen after migration).
-
-**Untouched:** all engine files (`renderer.ts`, `useGameEngine.ts` internals), level/question data, controls, single-player flow.
+**Approve to proceed**, or tell me to narrow scope (e.g. "just restore Google sign-in first").
