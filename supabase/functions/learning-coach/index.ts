@@ -1,11 +1,28 @@
 // Edge function: AI-powered learning coach using Lovable AI Gateway.
+// Includes a simple in-memory token bucket rate-limit keyed by IP (10 req / 5 min).
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
+const buckets = new Map<string, { count: number; reset: number }>();
+function rateLimit(key: string, limit = 10, windowMs = 5 * 60 * 1000): boolean {
+  const now = Date.now();
+  const b = buckets.get(key);
+  if (!b || now > b.reset) { buckets.set(key, { count: 1, reset: now + windowMs }); return true; }
+  if (b.count >= limit) return false;
+  b.count++; return true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "anon";
+  if (!rateLimit(ip)) {
+    return new Response(JSON.stringify({ error: "rate_limited_local" }), {
+      status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
   try {
+
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "LOVABLE_API_KEY missing" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
