@@ -74,9 +74,11 @@ export default function AuthLogin({ onSuccess, onBack, onForgot }: Props) {
           CONTINUE WITH GOOGLE
         </button>
 
-
+        <button type="button" onClick={onBack}
+          className="w-full mt-2 font-pixel text-[10px] px-4 py-2 text-muted-foreground hover:text-foreground">
           ← BACK
         </button>
+
       </form>
     </div>
   );
