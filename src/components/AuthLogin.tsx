@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { lovable } from '@/integrations/lovable';
+import { migrateGuestToAccount } from '@/game/saveSystem';
+
 
 interface Props { onSuccess: () => void; onBack: () => void; onForgot: () => void; }
 
